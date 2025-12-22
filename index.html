@@ -65,10 +65,33 @@
         .modal-content h3 {
             margin-top: 0;
         }
-        .modal-content ul {
-            padding-left: 20px;
-            line-height: 1.8;
+        /* Alert List Styles */
+        .alert-section {
+            margin-bottom: 20px;
         }
+        .alert-section h4 {
+            margin: 0 0 10px 0;
+            color: var(--text-primary);
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 5px;
+        }
+        .alert-list {
+            padding-left: 0;
+            list-style: none;
+        }
+        .alert-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 0.8em;
+            border-radius: 4px;
+        }
+
         #confirmation-toast {
             position: fixed;
             top: 20px;
@@ -431,9 +454,9 @@
     
     <div id="alert-modal" class="modal-overlay">
         <div class="modal-content">
-            <h3 id="alert-modal-title"></h3>
+            <h3 id="alert-modal-title">System Alerts</h3>
             <div id="alert-modal-body"></div>
-            <button id="alert-modal-close" class="btn btn-primary" style="margin-top: 20px; width: 100%;">OK</button>
+            <button id="alert-modal-close" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Close</button>
         </div>
     </div>
     
@@ -547,10 +570,6 @@
                 <form id="newCustomerForm">
                      <div class="grid-container">
                         <div class="form-group"><label for="customerName">Customer Name</label><input type="text" id="customerName" name="customerName" required></div>
-                        <div class="form-group"><label for="phone">Phone Number</label><input type="tel" id="phone" name="phone"></div>
-                        <div class="form-group"><label for="login">Login</label><input type="text" id="login" name="login" readonly></div>
-                        <div class="form-group"><label for="password">Password</label><input type="text" id="password" name="password" readonly></div>
-                        <div class="form-group"><label for="macAddress">MAC Address (Optional)</label><input type="text" id="macAddress" name="macAddress" value="00:1A:79:"></div>
                         <div class="form-group">
                             <label for="subscriptionType">Subscription</label>
                             <select id="subscriptionType" name="subscriptionType" required>
@@ -594,7 +613,7 @@
             <div class="card">
                 <div class="customer-list-header">
                     <h2>Customer List</h2>
-                    <input type="search" id="customerSearch" placeholder="Search by name, phone, login...">
+                    <input type="search" id="customerSearch" placeholder="Search by name...">
                     <button id="clear-filter-btn" class="btn btn-secondary" style="display: none;">Show All Customers</button>
                 </div>
                 <div class="table-container">
@@ -602,7 +621,6 @@
                         <thead>
                             <tr>
                                 <th data-sort="name">Name</th>
-                                <th data-sort="phone">Phone</th>
                                 <th data-sort="subDate">Started On</th>
                                 <th data-sort="endDate">Expiry</th>
                                 <th data-sort="status">Subscription Status</th>
@@ -753,7 +771,8 @@
         let localExpenses = [];
         let localInventory = [];
         let localIncome = [];
-        let alertedCustomers = new Set();
+        let alertedPaymentCustomers = new Set();
+        let alertedExpiryCustomers = new Set();
         let userId = "gL1KLYx6NqdokNaHoY3zhUvoRPo1";
         let db;
         let sortColumn = 'createdAt';
@@ -808,16 +827,7 @@
             if (!str) return '';
             return str.charAt(0).toUpperCase() + str.slice(1);
         };
-        const generateCredentials = (fullName) => {
-            if (!fullName) { return { login: '', password: '' }; }
-            const names = fullName.trim().split(' ').filter(n => n);
-            const firstName = (names[0] || '').toUpperCase();
-            
-            const login = 'M26' + firstName.substring(0, 2);
-            const password = 'M26' + firstName.substring(0, 3);
-            
-            return { login, password };
-        };
+        
         const calculateEndDate = () => {
             const startDate = new Date(subscriptionDate.value);
             const type = subscriptionType.value;
@@ -841,7 +851,6 @@
         const resetCustomerForm = () => {
             currentlyEditingCustomerId = null;
             customerForm.reset();
-            document.getElementById('macAddress').value = "00:1A:79:";
             customerFormHeader.textContent = "Create New Customer";
             customerFormSubmitBtn.textContent = "Add New Customer";
             customerFormCancelBtn.style.display = 'none';
@@ -853,10 +862,6 @@
 
         const populateCustomerForm = (customer) => {
             customerForm.customerName.value = customer.name || '';
-            customerForm.phone.value = customer.phone || '';
-            customerForm.login.value = customer.login || '';
-            customerForm.password.value = customer.password || '';
-            customerForm.macAddress.value = customer.macAddress || '00:1A:79:';
             customerForm.subscriptionDate.value = formatDate(customer.subDate);
             customerForm.subscriptionEndingDate.value = formatDate(customer.endDate);
             customerForm.paymentStatus.value = customer.status || 'Unpaid';
@@ -886,7 +891,6 @@
            
             return `
                 <td>${customer.name}</td>
-                <td>${customer.phone || '-'}</td>
                 <td>${formatDisplayDate(customer.subDate)}</td>
                 <td class="expiry-cell">
                     <span class="expiry-date ${expiryDateClass}">${formatDisplayDate(customer.endDate)}</span>
@@ -966,9 +970,7 @@
             const lowerCaseQuery = searchQuery.toLowerCase();
             if (searchQuery) {
                 customersToDisplay = customersToDisplay.filter(c =>
-                    c.name?.toLowerCase().includes(lowerCaseQuery) ||
-                    c.phone?.includes(lowerCaseQuery) ||
-                    c.login?.toLowerCase().includes(lowerCaseQuery)
+                    c.name?.toLowerCase().includes(lowerCaseQuery)
                 );
             }
             
@@ -1091,29 +1093,64 @@
             inventoryTotalValueEl.textContent = formatCurrency(totalValue);
         };
         
-        const checkOverduePayments = (customers) => {
+        const checkSystemAlerts = (customers) => {
             const today = new Date(); today.setHours(0, 0, 0, 0);
             const overdueCustomers = [];
+            const expiringCustomers = [];
             
             customers.forEach(customer => {
-                if (customer.status === 'Unpaid' && !alertedCustomers.has(customer.id)) {
+                // Check Overdue Payments
+                if (customer.status === 'Unpaid') {
                     const subDate = new Date(customer.subDate);
                     const daysSinceSub = Math.floor((today - subDate) / (1000 * 3600 * 24));
-                    if (daysSinceSub >= 2) {
-                       overdueCustomers.push(customer);
+                    if (daysSinceSub >= 2 && !alertedPaymentCustomers.has(customer.id)) {
+                        overdueCustomers.push(customer);
                     }
+                }
+
+                // Check Expiring Soon (3 days or less, but not already expired)
+                const endDate = new Date(customer.endDate);
+                const timeDiff = endDate.getTime() - today.getTime();
+                const daysUntilExpiry = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                
+                if (daysUntilExpiry >= 0 && daysUntilExpiry <= 3 && !alertedExpiryCustomers.has(customer.id)) {
+                    expiringCustomers.push({ ...customer, daysUntilExpiry });
                 }
             });
 
-            if (overdueCustomers.length > 0) {
-                alertModalTitle.textContent = 'Overdue Payment Reminders';
-                let listHtml = '<ul>';
-                overdueCustomers.forEach(cust => {
-                    listHtml += `<li><b>${cust.name}</b>'s payment is overdue.</li>`;
-                    alertedCustomers.add(cust.id);
-                });
-                listHtml += '</ul>';
-                alertModalBody.innerHTML = listHtml;
+            if (overdueCustomers.length > 0 || expiringCustomers.length > 0) {
+                let modalContent = '';
+
+                if (overdueCustomers.length > 0) {
+                    modalContent += `
+                        <div class="alert-section">
+                            <h4>⚠️ Overdue Payments</h4>
+                            <ul class="alert-list">`;
+                    overdueCustomers.forEach(cust => {
+                        modalContent += `
+                            <li>
+                                <span><b>${cust.name}</b></span>
+                                <button class="btn btn-save btn-sm btn-quick-pay" data-id="${cust.id}">Mark Paid</button>
+                            </li>`;
+                        alertedPaymentCustomers.add(cust.id);
+                    });
+                    modalContent += `</ul></div>`;
+                }
+
+                if (expiringCustomers.length > 0) {
+                    modalContent += `
+                        <div class="alert-section">
+                            <h4>⏳ Expiring Soon (3 Days)</h4>
+                            <ul class="alert-list">`;
+                    expiringCustomers.forEach(cust => {
+                        const dayText = cust.daysUntilExpiry === 0 ? 'Today' : (cust.daysUntilExpiry === 1 ? 'Tomorrow' : `in ${cust.daysUntilExpiry} days`);
+                        modalContent += `<li>${cust.name} - Ends <b>${dayText}</b></li>`;
+                        alertedExpiryCustomers.add(cust.id);
+                    });
+                    modalContent += `</ul></div>`;
+                }
+
+                alertModalBody.innerHTML = modalContent;
                 alertModal.classList.add('show');
             }
         };
@@ -1182,8 +1219,8 @@
                 
                 if(currentlyEditingCustomerId) {
                      const customerData = {
-                        name: capitalize(formData.get('customerName').trim()), phone: formData.get('phone'), 
-                        macAddress: formData.get('macAddress'), subDate: formData.get('subscriptionDate'),
+                        name: capitalize(formData.get('customerName').trim()), 
+                        subDate: formData.get('subscriptionDate'),
                         endDate: formData.get('subscriptionEndingDate'), status: formData.get('paymentStatus'),
                         amount: parseFloat(formData.get('paymentAmount')), specialNote: formData.get('specialNote'),
                     };
@@ -1197,10 +1234,10 @@
                     if (allCustomers.some(c => c.name.trim().toLowerCase() === newNameLower)) {
                         alert(`Error: A customer named "${newNameInput}" already exists.`); return;
                     }
-                    const { login, password } = generateCredentials(newNameInput);
+                    
                     const newCustomer = {
-                        name: newNameInput, phone: formData.get('phone'), login, password,
-                        macAddress: formData.get('macAddress'), subDate: formData.get('subscriptionDate'),
+                        name: newNameInput,
+                        subDate: formData.get('subscriptionDate'),
                         endDate: formData.get('subscriptionEndingDate'), status: formData.get('paymentStatus'),
                         amount: parseFloat(formData.get('paymentAmount')), archived: false, specialNote: formData.get('specialNote'),
                         createdAt: new Date().toISOString()
@@ -1238,13 +1275,7 @@
                     resetCustomerForm();
                 }
             });
-            customerForm.addEventListener('input', (e) => {
-                if(e.target.id === 'customerName' && !currentlyEditingCustomerId) {
-                    const { login, password } = generateCredentials(e.target.value);
-                    document.getElementById('login').value = login;
-                    document.getElementById('password').value = password;
-                }
-            });
+            
             customerFormCancelBtn.addEventListener('click', resetCustomerForm);
 
             sellItemCheckbox.addEventListener('change', () => {
@@ -1309,6 +1340,16 @@
                             setUndoAction(() => { setDoc(doc(db, `users/${userId}/customers`, docId), customer); });
                         }
                     }
+                }
+            });
+            
+            // New Event Listener for Quick Pay in Modal
+            alertModalBody.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('btn-quick-pay')) {
+                    const docId = e.target.dataset.id;
+                    await updateDoc(doc(db, `users/${userId}/customers`, docId), { status: 'Paid' });
+                    e.target.closest('li').remove(); // Remove line from modal immediately
+                    showConfirmationToast("Payment marked as paid!");
                 }
             });
             
@@ -1454,7 +1495,7 @@
             onSnapshot(collection(db, `users/${userId}/customers`), (snapshot) => {
                 allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 localCustomers = allCustomers.filter(c => !c.archived);
-                checkOverduePayments(localCustomers);
+                checkSystemAlerts(localCustomers);
                 displayCustomers(); updateSummary(); updateMonthlyReport();
             });
             onSnapshot(collection(db, `users/${userId}/expenses`), (snapshot) => {
