@@ -975,8 +975,8 @@
         let alertedExpiryCustomers = new Set();
         let userId = "gL1KLYx6NqdokNaHoY3zhUvoRPo1";
         let db;
-        let sortColumn = 'createdAt';
-        let sortDirection = 'desc';
+        let sortColumn = 'endDate'; // Default sort by Expiry
+        let sortDirection = 'asc';  // Default to ascending (closest date first)
         let searchQuery = '';
         let currentFilter = 'all';
         let lastAction = null;
@@ -1104,9 +1104,38 @@
             const statusClass = isExpired ? 'sub-status-expired' : 'sub-status-active';
             const expiryDateClass = isExpired ? 'expired' : 'active';
             
-            // WhatsApp Pre-filled Message
-            const waMessage = `Hi ${customer.name}, your Media26 subscription expires on ${formatDisplayDate(customer.endDate)}. Would you like to renew?`;
+            // Existing Expiry Reminder Logic
+            const waMessage = isExpired 
+                ? `Hi ${customer.name}, your Media26 subscription expired on ${formatDisplayDate(customer.endDate)}. Would you like to renew?`
+                : `Hi ${customer.name}, your Media26 subscription expires on ${formatDisplayDate(customer.endDate)}. Would you like to renew?`;
+
             const waLink = `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
+
+            // --- NEW: Overdue Payment Reminder Logic ---
+            let overdueButtonHtml = '';
+            if (customer.status === 'Unpaid') {
+                const subDate = new Date(customer.subDate);
+                const today = new Date();
+                const diffTime = Math.abs(today - subDate);
+                const daysOverdue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                // Only show if more than 5 days overdue
+                if (daysOverdue > 5) {
+                    // Soft, gentle tone
+                    const overdueMsg = `Hi ${customer.name}, hope you're doing well! Just a gentle reminder that your IPTV Subscription payment has been pending for ${daysOverdue} days. We'd appreciate it if you could check this when you have a moment. Thanks!`;
+                    const overdueLink = `https://wa.me/?text=${encodeURIComponent(overdueMsg)}`;
+                    
+                    overdueButtonHtml = `
+                        <a href="${overdueLink}" target="_blank" 
+                           style="position: relative; text-decoration: none; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" 
+                           title="Send Soft Payment Reminder">
+                            📱
+                            <span style="position: absolute; top: -5px; right: -5px; background: #FF3B30; color: white; font-size: 0.6em; font-weight: bold; border-radius: 50%; padding: 1px 4px; min-width: 12px; text-align: center; border: 1px solid white; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+                                ${daysOverdue}
+                            </span>
+                        </a>`;
+                }
+            }
            
             return `
                 <td>${customer.name}</td>
@@ -1117,10 +1146,13 @@
                 </td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
-                    <select class="payment-status-select" data-id="${customer.id}">
-                        <option value="Paid" ${customer.status === 'Paid' ? 'selected' : ''}>Paid</option>
-                        <option value="Unpaid" ${customer.status === 'Unpaid' ? 'selected' : ''}>Unpaid</option>
-                    </select>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select class="payment-status-select" data-id="${customer.id}">
+                            <option value="Paid" ${customer.status === 'Paid' ? 'selected' : ''}>Paid</option>
+                            <option value="Unpaid" ${customer.status === 'Unpaid' ? 'selected' : ''}>Unpaid</option>
+                        </select>
+                        ${overdueButtonHtml}
+                    </div>
                 </td>
                 <td class="actions-cell">
                     <a href="${waLink}" target="_blank" class="btn" style="background-color: #25D366; color: white; padding: 6px 12px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" title="Send Reminder">
@@ -1543,6 +1575,11 @@
                 newCustomerCard.style.display = 'block';
                 displayCustomers();
             });
+
+            customerSearchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.trim();
+                displayCustomers();
+            });
             
             customerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -1641,6 +1678,35 @@
                 }
                 addDoc(collection(db, `users/${userId}/inventory`), newItem);
                 inventoryForm.reset();
+            });
+
+            // ADDED: Listener for Table Header Sorting
+            customerTableHeader.addEventListener('click', (e) => {
+                const th = e.target.closest('th[data-sort]');
+                if (!th) return;
+
+                let column = th.dataset.sort;
+                
+                // Fix: Map the HTML header "paymentStatus" to the actual database property "status"
+                if (column === 'paymentStatus') {
+                    column = 'status';
+                }
+
+                if (sortColumn === column) {
+                    // Toggle direction if clicking the same column
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortColumn = column;
+                    
+                    // CUSTOM FIX: If clicking Payment Status, show 'Unpaid' (Desc) first
+                    // Alphabetically "U" (Unpaid) > "P" (Paid), so Descending puts Unpaid first
+                    if (column === 'status') {
+                        sortDirection = 'desc';
+                    } else {
+                        sortDirection = 'asc';
+                    }
+                }
+                displayCustomers();
             });
             
             customerTableBody.addEventListener('click', e => {
