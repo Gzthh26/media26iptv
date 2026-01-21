@@ -127,6 +127,7 @@
         #renew-modal .form-group label {
             font-weight: 600;
             width: 120px;
+            flex-shrink: 0; /* Prevents label from squishing */
         }
         #renew-modal .form-actions {
             display: flex;
@@ -136,6 +137,24 @@
         }
         #renew-modal .close-btn {
             background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);
+        }
+
+        /* Mobile Optimization for Renew Modal */
+        @media (max-width: 480px) {
+            #renew-modal .form-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            #renew-modal .form-group label {
+                width: 100%;
+            }
+            #renew-modal .form-actions {
+                flex-direction: column;
+            }
+            #renew-modal .form-actions button {
+                width: 100%;
+            }
         }
 
         .top-nav {
@@ -468,8 +487,23 @@
             </div>
             <form id="renew-form">
                 <div class="form-group">
+                    <label for="renew-start-date">Start Date</label>
+                    <input type="date" id="renew-start-date" name="renew-start-date" required>
+                </div>
+                <div class="form-group">
                     <label for="renew-credits">Select Credits</label>
                     <select id="renew-credits" name="renew-credits"></select>
+                </div>
+                <div class="form-group">
+                    <label>Payment Status</label>
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <label style="font-weight: normal; width: auto; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="renew-payment-status" value="Paid" required> Paid
+                        </label>
+                        <label style="font-weight: normal; width: auto; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="renew-payment-status" value="Unpaid" required> Unpaid
+                        </label>
+                    </div>
                 </div>
                  <div class="form-group">
                     <label>Type</label>
@@ -483,6 +517,17 @@
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h3 id="confirm-modal-title" style="margin-bottom: 10px;">Are you sure?</h3>
+            <p id="confirm-modal-message" style="color: var(--text-secondary); margin-bottom: 25px;">This action cannot be undone.</p>
+            <div class="form-actions" style="justify-content: center; gap: 15px; margin-top: 0;">
+                <button id="confirm-modal-cancel" class="btn btn-secondary" style="min-width: 100px;">Cancel</button>
+                <button id="confirm-modal-yes" class="btn btn-danger" style="min-width: 100px;">Yes, Delete</button>
+            </div>
         </div>
     </div>
 
@@ -722,6 +767,14 @@
         const renewModalCancel = document.getElementById('renew-modal-cancel');
         const renewForm = document.getElementById('renew-form');
         const renewCreditsSelect = document.getElementById('renew-credits');
+        
+        // New Confirmation Modal Elements
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmModalTitle = document.getElementById('confirm-modal-title');
+        const confirmModalMessage = document.getElementById('confirm-modal-message');
+        const confirmModalCancel = document.getElementById('confirm-modal-cancel');
+        const confirmModalYes = document.getElementById('confirm-modal-yes');
+
         const confirmationToast = document.getElementById('confirmation-toast');
         const dashboardGrid = document.getElementById('dashboard-grid');
         const customerFormTitle = document.getElementById('customer-form-title');
@@ -780,6 +833,7 @@
         let searchQuery = '';
         let currentFilter = 'all';
         let lastAction = null;
+        let confirmCallback = null; // Stores the action to run when "Yes" is clicked
 
         // --- UNDO FUNCTIONALITY ---
         const setUndoAction = (undoCallback) => {
@@ -808,14 +862,28 @@
         renewModalClose.addEventListener('click', () => renewModal.classList.remove('show'));
         renewModalCancel.addEventListener('click', () => renewModal.classList.remove('show'));
 
+        // Confirmation Modal Logic
+        confirmModalCancel.addEventListener('click', () => {
+            confirmModal.classList.remove('show');
+            confirmCallback = null;
+        });
+        confirmModalYes.addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            confirmModal.classList.remove('show');
+        });
+
         // --- UTILITY FUNCTIONS ---
         const formatCurrency = (amount) => (amount || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
         const formatDisplayDate = (dateString) => {
             if (!dateString) return 'N/A';
             const date = new Date(dateString);
             date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-            const options = { year: 'numeric', month: 'short', day: 'numeric' };
-            return date.toLocaleDateString('en-US', options);
+            
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = date.toLocaleString('en-US', { month: 'short' });
+            const year = date.getFullYear();
+            
+            return `${day}-${month}-${year}`;
         };
         const formatDate = (date) => {
             if (!date) return '';
@@ -1327,18 +1395,33 @@
                     }
                 } else if (target.classList.contains('renew-btn')) {
                     customerToRenewId = docId;
+                    // Automatically choose current date for renewal start
+                    document.getElementById('renew-start-date').value = new Date().toISOString().split('T')[0];
+                    
+                    // Reset Payment Status Radios (Force user to select)
+                    const paymentRadios = document.querySelectorAll('input[name="renew-payment-status"]');
+                    paymentRadios.forEach(radio => radio.checked = false);
+
                     renewModal.classList.add('show');
                 } else if (target.classList.contains('btn-delete-customer')) {
                     const customer = allCustomers.find(c => c.id === docId);
                     const isExpired = new Date(customer.endDate) < new Date();
+
                     if (isExpired) {
                         updateDoc(doc(db, `users/${userId}/customers`, docId), { archived: true });
                         setUndoAction(() => { updateDoc(doc(db, `users/${userId}/customers`, docId), { archived: false }); });
                     } else {
-                        if (confirm("PERMANENTLY DELETE this active user? This action cannot be undone.")) {
+                        // Use Professional Custom Modal
+                        confirmModalTitle.textContent = "Delete Active User?";
+                        confirmModalMessage.textContent = `Are you sure you want to permanently delete ${customer.name}? This action cannot be undone.`;
+                        
+                        confirmCallback = () => {
                             deleteDoc(doc(db, `users/${userId}/customers`, docId));
                             setUndoAction(() => { setDoc(doc(db, `users/${userId}/customers`, docId), customer); });
-                        }
+                            showConfirmationToast("User deleted successfully.");
+                        };
+                        
+                        confirmModal.classList.add('show');
                     }
                 }
             });
@@ -1357,20 +1440,26 @@
                 e.preventDefault();
                 if (!customerToRenewId) return;
 
-                const months = parseInt(renewCreditsSelect.value, 10);
+                const formData = new FormData(renewForm);
+                const months = parseInt(formData.get('renew-credits'), 10);
+                const startDateInput = formData.get('renew-start-date');
+                const paymentStatus = formData.get('renew-payment-status'); // Get selected Paid/Unpaid status
+
                 const customer = allCustomers.find(c => c.id === customerToRenewId);
                 const originalData = { ...customer };
 
-                const amount = months * 10;
-                const currentEndDate = new Date(customer.endDate);
-                const renewStartDate = new Date() > currentEndDate ? new Date() : currentEndDate;
+                // Logic: Start from the selected date, add months to get end date
+                const renewStartDate = new Date(startDateInput);
                 const newEndDate = new Date(renewStartDate);
                 newEndDate.setMonth(newEndDate.getMonth() + months);
 
+                const amount = months * 10;
+
                 updateDoc(doc(db, `users/${userId}/customers`, customerToRenewId), {
-                    endDate: formatDate(newEndDate),
+                    subDate: formatDate(renewStartDate), // Update Started On date
+                    endDate: formatDate(newEndDate),     // Update Expiry date
                     amount: amount,
-                    status: 'Paid'
+                    status: paymentStatus // Update with selected status
                 });
                 setUndoAction(() => { updateDoc(doc(db, `users/${userId}/customers`, customerToRenewId), originalData); });
                 renewModal.classList.remove('show');
