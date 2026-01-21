@@ -6,19 +6,27 @@
     <title>Media26 IPTV Dashboard</title>
     <style>
         :root {
-            --bg-color: #f4f6f9;
-            --card-color: #ffffff;
-            --border-color: #e5e7eb;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --accent-color: #3b82f6;
-            --accent-hover: #2563eb;
-            --danger-color: #ef4444;
-            --danger-hover: #dc2626;
-            --success-color: #22c55e;
-            --warning-color: #f59e0b;
-            --info-color: #6366f1;
-            --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* Apple/Glass Theme Variables */
+            --bg-mesh-1: hsla(253, 16%, 7%, 1); /* Dark undertone not used in light mode but kept for ref */
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+            --blur-strength: 20px;
+            
+            --text-primary: #1d1d1f; /* Apple Dark Grey */
+            --text-secondary: #86868b; /* Apple Light Grey */
+            
+            --accent-color: #007AFF; /* iOS Blue */
+            --accent-hover: #0056b3;
+            --danger-color: #FF3B30; /* iOS Red */
+            --success-color: #34C759; /* iOS Green */
+            --warning-color: #FF9500; /* iOS Orange */
+            --info-color: #5856D6;    /* iOS Purple */
+            
+            --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --radius-card: 20px;
+            --radius-input: 12px;
+            --radius-btn: 12px;
         }
 
         html {
@@ -27,11 +35,32 @@
 
         body {
             font-family: var(--font-family);
-            background-color: var(--bg-color);
             color: var(--text-primary);
             margin: 0;
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            /* Mesh Gradient Background */
+            background-color: #fbfbfd;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,0) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,0) 0, transparent 50%);
+            background: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(239, 68, 68, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.1) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(168, 85, 247, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        /* --- Glassmorphism Utilities --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength));
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
         }
 
         /* Modal & Toast Styles */
@@ -41,7 +70,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.3); /* Softer overlay */
+            backdrop-filter: blur(4px);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -49,78 +79,72 @@
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s, visibility 0.3s;
-            backdrop-filter: blur(2px);
         }
         .modal-overlay.show {
             opacity: 1;
             visibility: visible;
         }
         .modal-content {
-            background-color: var(--card-color);
+            background: rgba(255, 255, 255, 0.85); /* More opaque for readability */
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.6);
             padding: 30px;
-            border-radius: 0.75rem;
+            border-radius: var(--radius-card);
             width: 90%;
-            max-width: 500px;
+            max-width: 480px;
             max-height: 85vh;
             overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
         .modal-content h3 {
             margin-top: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
         }
+        
         /* Alert List Styles */
-        .alert-section {
-            margin-bottom: 20px;
-        }
+        .alert-section { margin-bottom: 20px; }
         .alert-section h4 {
             margin: 0 0 10px 0;
             color: var(--text-primary);
-            border-bottom: 2px solid #f3f4f6;
-            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 8px;
         }
-        .alert-list {
-            padding-left: 0;
-            list-style: none;
-        }
+        .alert-list { padding-left: 0; list-style: none; }
         .alert-list li {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #f3f4f6;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
-        .btn-sm {
-            padding: 4px 10px;
-            font-size: 0.8em;
-            border-radius: 4px;
-        }
+        .btn-sm { padding: 4px 10px; font-size: 0.8em; border-radius: 6px; }
 
         #confirmation-toast {
             position: fixed;
             top: 20px;
             right: -100%;
-            background-color: var(--success-color);
+            background: rgba(34, 197, 94, 0.9); /* Translucent Green */
+            backdrop-filter: blur(10px);
             color: white;
             padding: 15px 25px;
-            border-radius: 8px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: right 0.5s ease-in-out;
+            border-radius: 50px; /* Pill shape */
+            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 2001;
         }
-        #confirmation-toast.show {
-            right: 20px;
-        }
+        #confirmation-toast.show { right: 20px; }
 
+        /* Renew Modal Specifics */
         #renew-modal .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
-         #renew-modal h3 {
-            margin-bottom: 0;
-        }
+        #renew-modal h3 { margin-bottom: 0; }
         #renew-modal .form-group {
             display: flex;
             align-items: center;
@@ -130,7 +154,7 @@
         #renew-modal .form-group label {
             font-weight: 600;
             width: 120px;
-            flex-shrink: 0; /* Prevents label from squishing */
+            flex-shrink: 0;
         }
         #renew-modal .form-actions {
             display: flex;
@@ -139,8 +163,9 @@
             margin-top: 30px;
         }
         #renew-modal .close-btn {
-            background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);
+            background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); transition: color 0.2s;
         }
+        #renew-modal .close-btn:hover { color: var(--text-primary); }
 
         /* Mobile Optimization for Renew Modal */
         @media (max-width: 480px) {
@@ -149,20 +174,17 @@
                 align-items: flex-start;
                 gap: 8px;
             }
-            #renew-modal .form-group label {
-                width: 100%;
-            }
-            #renew-modal .form-actions {
-                flex-direction: column;
-            }
-            #renew-modal .form-actions button {
-                width: 100%;
-            }
+            #renew-modal .form-group label { width: 100%; }
+            #renew-modal .form-actions { flex-direction: column; }
+            #renew-modal .form-actions button { width: 100%; }
         }
 
+        /* --- Top Navigation (Glassy) --- */
         .top-nav {
-            background-color: var(--card-color);
-            border-bottom: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
             padding: 0 40px;
             display: flex;
             align-items: center;
@@ -170,77 +192,111 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            height: 70px;
         }
         
         .nav-tabs {
             display: flex;
-            overflow-x: auto; /* Allow horizontal scroll on mobile */
+            overflow-x: auto;
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Hide scrollbar Firefox */
+            scrollbar-width: none;
+            gap: 10px;
         }
-        .nav-tabs::-webkit-scrollbar {
-            display: none; /* Hide scrollbar Chrome/Safari */
-        }
+        .nav-tabs::-webkit-scrollbar { display: none; }
 
         .nav-tab {
-            padding: 18px 25px;
+            padding: 10px 16px;
             border: none;
-            background: none;
+            background: transparent;
             cursor: pointer;
             font-size: 0.95em;
-            font-weight: 600;
+            font-weight: 500;
             color: var(--text-secondary);
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s ease-in-out;
-            white-space: nowrap;
+            border-radius: 50px; /* Pill shape */
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .nav-tab:hover {
-            color: var(--accent-color);
+            color: var(--text-primary);
+            background: rgba(0,0,0,0.03);
         }
         .nav-tab.active {
-            color: var(--accent-color);
-            border-bottom-color: var(--accent-color);
+            color: #fff;
+            background: var(--accent-color);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+            font-weight: 600;
         }
 
+        /* --- Undo Button (Icon Style) --- */
+        #undo-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.5);
+            color: var(--text-primary);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        #undo-button:hover:not(:disabled) {
+            background: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        #undo-button:disabled {
+            opacity: 0.4;
+            cursor: default;
+            transform: none;
+        }
+
+        /* --- Main Content --- */
         .main-content {
             padding: 30px 40px;
-            height: calc(100vh - 65px);
+            height: calc(100vh - 70px);
             overflow-y: auto;
             box-sizing: border-box;
         }
 
-        .tab-content {
-            display: none;
-        }
+        .tab-content { display: none; }
         .tab-content.active {
             display: block;
-            animation: fadeIn 0.5s ease-in-out;
+            animation: fadeIn 0.4s ease-out;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         h1, h2 {
             margin: 0 0 25px 0;
             font-weight: 700;
-            color: #111827;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
         }
         
+        /* --- Cards (Glassy) --- */
         .card {
-            background-color: var(--card-color);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength));
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-card);
             padding: 25px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--glass-shadow);
             margin-bottom: 30px;
+            transition: transform 0.3s ease;
         }
         
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            /* Improved Grid: Min 240px prevents squishing */
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
         }
         
@@ -248,127 +304,164 @@
             display: flex;
             align-items: center;
             gap: 20px;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 24px;
+            border-radius: var(--radius-card);
             color: #fff;
             cursor: pointer;
-            transition: transform 0.2s ease-in-out;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 10px 20px -10px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
         }
+        /* Shine effect on summary cards */
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 60%);
+            z-index: 1;
+            transform: translateX(-100%);
+            transition: transform 0.5s;
+        }
+        .summary-card:hover::before { transform: translateX(100%); }
         .summary-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.3);
         }
-        .summary-card .icon {
-            font-size: 1.5em; 
-        }
-        .summary-card .value {
-            font-size: 2em;
-            font-weight: 700;
-        }
-        .summary-card .label {
-            font-size: 0.9em;
-            opacity: 0.9;
+        .summary-card .icon { font-size: 1.8em; z-index: 2; }
+        .summary-card .value { font-size: 2em; font-weight: 700; line-height: 1.1; z-index: 2; }
+        .summary-card .label { font-size: 0.9em; opacity: 0.95; font-weight: 500; z-index: 2; }
+        
+        /* --- Forms & Inputs --- */
+        .form-group { display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; }
+        .full-width { grid-column: 1 / -1; }
+        
+        label { 
+            font-weight: 600; 
+            font-size: 0.8em; 
+            color: var(--text-secondary); 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
         }
         
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .full-width { grid-column: 1 / -1; }
-        label { font-weight: 500; font-size: 0.85em; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         input, select, textarea {
-            background-color: #f9fafb;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            padding: 10px 12px;
+            background-color: rgba(255, 255, 255, 0.5); /* Semi-transparent input */
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: var(--radius-input);
+            padding: 12px 14px;
             font-size: 0.95em;
-            width: 100%;
-            box-sizing: border-box;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            width: 100%; /* Ensure full width within grid cell */
+            box-sizing: border-box; /* Crucial for alignment */
+            transition: all 0.2s;
+            font-family: var(--font-family);
+            color: var(--text-primary);
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
+            background-color: #fff;
             border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
         }
 
+        /* --- Buttons --- */
         .btn {
-            padding: 10px 16px;
-            border: 1px solid transparent;
-            border-radius: 0.5rem;
+            padding: 10px 18px;
+            border: none;
+            border-radius: var(--radius-btn);
             font-size: 0.9em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            letter-spacing: -0.01em;
         }
-        .btn-primary { background-color: var(--accent-color); color: #fff; }
-        .btn-primary:hover { background-color: var(--accent-hover); }
-        .btn-danger { background-color: var(--danger-color); color: #fff; }
-        .btn-edit { background-color: #e0e7ff; color: #4338ca; }
-        .btn-edit:hover { background-color: #c7d2fe; }
-        .btn-save { background-color: #dcfce7; color: #16a34a; }
-        .btn-save:hover { background-color: #bbf7d0; }
-        .btn-secondary { background-color: #e5e7eb; color: #4b5563; }
-        .btn-secondary:hover { background-color: #d1d5db; }
-        .btn-sold { background-color: var(--success-color); color: #fff; }
-        .btn-sold:hover { background-color: #16a34a; }
-        .btn:disabled {
-            background-color: #e5e7eb;
-            color: #9ca3af;
-            cursor: not-allowed;
+        .btn-primary { 
+            background: var(--accent-color); 
+            color: #fff; 
+            box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
         }
-        .btn-icon {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        .btn-icon:hover {
-            background-color: #e5e7eb;
+        .btn-primary:hover { 
+            background: var(--accent-hover); 
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(0, 122, 255, 0.4);
         }
         
-        .customer-form-actions {
-            display: flex;
-            gap: 10px;
+        .btn-danger { 
+            background: var(--danger-color); 
+            color: #fff; 
+            box-shadow: 0 4px 10px rgba(255, 59, 48, 0.3);
         }
+        .btn-danger:hover { background: #d73328; transform: translateY(-1px); }
 
+        .btn-edit { background: rgba(88, 86, 214, 0.1); color: var(--info-color); }
+        .btn-edit:hover { background: rgba(88, 86, 214, 0.2); }
+        
+        .btn-save { background: rgba(52, 199, 89, 0.1); color: var(--success-color); }
+        .btn-save:hover { background: rgba(52, 199, 89, 0.2); }
+        
+        .btn-secondary { background: rgba(0,0,0,0.05); color: var(--text-primary); }
+        .btn-secondary:hover { background: rgba(0,0,0,0.1); }
+        
+        .btn-sold { background: var(--success-color); color: #fff; }
+        .btn-sold:hover { background: #248a3d; }
+        
+        .btn:disabled {
+            background-color: #f2f2f7;
+            color: #c7c7cc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .btn-icon {
+            background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 8px;
+            font-size: 1.1em; transition: background 0.2s;
+        }
+        .btn-icon:hover { background-color: rgba(0,0,0,0.05); }
+        
+        .customer-form-actions { display: flex; gap: 10px; }
+
+        /* --- Tables --- */
         .table-container { 
             width: 100%; 
             overflow-x: auto; 
-            border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.4);
         }
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
         th, td { 
-            padding: 12px 16px;
+            padding: 14px 18px;
             text-align: left; 
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
             white-space: nowrap;
             vertical-align: middle;
             font-size: 0.95em;
         }
-        th { border-top: none; border-left: none; border-right: none; }
-        td { border-left: none; border-right: none; }
-
-        tbody tr:hover {
-            background-color: #f9fafb;
-        }
+        
+        tbody tr:hover { background-color: rgba(255, 255, 255, 0.6); }
+        tbody tr:last-child td { border-bottom: none; }
+        
         thead th { 
-            background-color: #f8fafc; 
+            background-color: rgba(0,0,0,0.02); 
             font-size: 0.75em; 
             text-transform: uppercase; 
-            letter-spacing: 0.5px; 
-            font-weight: 600;
+            letter-spacing: 1px; 
+            font-weight: 700;
             color: var(--text-secondary);
+            backdrop-filter: blur(5px);
         }
+        
         .actions-cell { display: flex; gap: 8px; }
-        .row-expired { background-color: #fee2e2; }
-        .row-expires-soon { background-color: #fef2f2; }
+        
+        /* Status Badges */
+        .row-expired { background-color: rgba(255, 59, 48, 0.08) !important; }
+        .row-expires-soon { background-color: rgba(255, 149, 0, 0.08) !important; }
 
         .status-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
+            padding: 6px 12px;
+            border-radius: 50px;
             font-size: 0.75em;
             font-weight: 700;
             text-transform: uppercase;
@@ -376,68 +469,47 @@
             letter-spacing: 0.5px;
         }
         .payment-status-select {
-            padding: 4px 8px;
+            padding: 6px 12px;
+            font-size: 0.85em;
+            border-radius: 8px;
+            border-color: transparent;
+            background: rgba(0,0,0,0.05);
+            font-weight: 500;
+        }
+        .status-paid { background-color: rgba(52, 199, 89, 0.15); color: #248a3d; }
+        .status-unpaid { background-color: rgba(255, 149, 0, 0.15); color: #b45309; }
+        .sub-status-active { background-color: rgba(52, 199, 89, 0.15); color: #248a3d; }
+        .sub-status-expired { background-color: rgba(255, 59, 48, 0.15); color: var(--danger-color); }
+        
+        .expiry-cell { display: flex; align-items: center; gap: 10px; }
+        .expiry-date {
+            padding: 4px 10px;
+            border-radius: 6px;
             font-size: 0.9em;
-            max-width: 110px;
-            border-radius: 4px;
+            font-weight: 500;
         }
-        .status-paid {
-            background-color: #dcfce7;
-            color: #16a34a;
-        }
-        .status-unpaid {
-            background-color: #fef9c3;
-            color: #ca8a04;
-        }
-        .sub-status-active {
-             background-color: #dcfce7;
-             color: #16a34a;
-        }
-        .sub-status-expired {
-             background-color: #fee2e2;
-             color: var(--danger-color);
-        }
-        .expiry-cell {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .expiry-date.active {
-            background-color: var(--success-color);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
-        }
-        .expiry-date.expired {
-            background-color: var(--danger-color);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
-        }
+        .expiry-date.active { background-color: var(--success-color); color: white; box-shadow: 0 2px 6px rgba(52, 199, 89, 0.4); }
+        .expiry-date.expired { background-color: var(--danger-color); color: white; box-shadow: 0 2px 6px rgba(255, 59, 48, 0.4); }
 
+        /* Search & Filters */
         .customer-list-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
             gap: 15px;
         }
         #customerSearch {
-            padding: 10px 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
+            padding: 12px 18px;
+            border-radius: 50px;
+            border: 1px solid rgba(0,0,0,0.1);
             width: 300px;
             font-size: 0.95em;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         }
-        #customerSearch:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-            outline: none;
-        }
+        
         thead th[data-sort] {
             cursor: pointer;
             position: relative;
@@ -453,18 +525,12 @@
             border: 4px solid transparent;
             opacity: 0.3;
         }
-        thead th[data-sort].sort-asc::after {
-            border-bottom-color: var(--text-primary);
-            opacity: 1;
-        }
-        thead th[data-sort].sort-desc::after {
-            border-top-color: var(--text-primary);
-            opacity: 1;
-        }
+        thead th[data-sort].sort-asc::after { border-bottom-color: var(--text-primary); opacity: 1; }
+        thead th[data-sort].sort-desc::after { border-top-color: var(--text-primary); opacity: 1; }
         
         hr.page-breaker {
             border: none;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid rgba(0,0,0,0.06);
             margin: 40px 0;
         }
         
@@ -478,8 +544,9 @@
         #reportMonth {
             font-size: 1em;
             padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.8);
         }
         
         .highlight-label {
@@ -490,30 +557,17 @@
         
         /* Mobile Responsiveness Improvements */
         @media (max-width: 768px) {
-            body {
-                font-size: 14px; /* Slightly smaller base font for mobile */
-            }
-            .top-nav {
-                padding: 0 15px;
-                overflow-x: auto;
-            }
-            .nav-tab {
-                padding: 15px 15px;
-                font-size: 0.9em;
-            }
-            .main-content {
-                padding: 15px;
-                height: auto; /* Allow full scroll on mobile */
-            }
-            .card {
-                padding: 15px;
-                margin-bottom: 20px;
-            }
-            h1 { font-size: 1.5em; margin-bottom: 15px; }
-            h2 { font-size: 1.25em; margin-bottom: 15px; }
+            body { font-size: 14px; }
+            .top-nav { padding: 0 20px; height: 60px; }
+            .nav-tab { padding: 8px 14px; font-size: 0.9em; }
+            .main-content { padding: 20px; height: auto; }
+            .card { padding: 20px; margin-bottom: 20px; }
+            h1 { font-size: 1.6em; margin-bottom: 20px; }
+            h2 { font-size: 1.3em; margin-bottom: 15px; }
             
             .grid-container {
-                gap: 15px;
+                /* On very small mobile, single column is safer */
+                grid-template-columns: 1fr;
             }
             
             #inventoryForm, #newCustomerForm .grid-container, #expenseForm {
@@ -521,37 +575,21 @@
             }
             
             #undo-button {
-                font-size: 0.8em;
-                padding: 6px 12px;
-                white-space: nowrap;
+                width: 36px; height: 36px;
+                font-size: 1.1em;
             }
 
-            /* Table optimizations for mobile */
-            th, td {
-                padding: 10px;
-                font-size: 0.85em;
-            }
-            .btn {
-                padding: 8px 12px;
-                font-size: 0.85em;
-            }
-            #customerSearch {
-                width: 100%; /* Full width search on mobile */
-            }
-            .customer-list-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .btn-edit, .btn-danger, .btn-sold {
-                padding: 6px 10px;
-            }
+            th, td { padding: 12px; font-size: 0.9em; }
+            .btn { padding: 8px 14px; font-size: 0.9em; }
+            #customerSearch { width: 100%; }
+            .customer-list-header { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
 <body>
     
     <div id="alert-modal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content glass-panel">
             <h3 id="alert-modal-title">System Alerts</h3>
             <div id="alert-modal-body"></div>
             <button id="alert-modal-close" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Close</button>
@@ -559,7 +597,7 @@
     </div>
     
     <div id="renew-modal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content glass-panel">
             <div class="modal-header">
                  <h3>Renew Subscription</h3>
                  <button class="close-btn" id="renew-modal-close">&times;</button>
@@ -576,10 +614,10 @@
                 <div class="form-group">
                     <label>Payment Status</label>
                     <div style="display: flex; gap: 20px; align-items: center;">
-                        <label style="font-weight: normal; width: auto; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <label style="font-weight: normal; width: auto; cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--text-primary);">
                             <input type="radio" name="renew-payment-status" value="Paid" required> Paid
                         </label>
-                        <label style="font-weight: normal; width: auto; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <label style="font-weight: normal; width: auto; cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--text-primary);">
                             <input type="radio" name="renew-payment-status" value="Unpaid" required> Unpaid
                         </label>
                     </div>
@@ -588,7 +626,7 @@
                     <label>Type</label>
                     <div>
                         <input type="radio" id="renew-type-add" name="renew-type" value="add" checked>
-                        <label for="renew-type-add">Add</label>
+                        <label for="renew-type-add" style="color: var(--text-primary); text-transform: none;">Add</label>
                     </div>
                 </div>
                 <div class="form-actions">
@@ -600,7 +638,7 @@
     </div>
 
     <div id="confirm-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div class="modal-content glass-panel" style="max-width: 400px; text-align: center;">
             <h3 id="confirm-modal-title" style="margin-bottom: 10px;">Are you sure?</h3>
             <p id="confirm-modal-message" style="color: var(--text-secondary); margin-bottom: 25px;">This action cannot be undone.</p>
             <div class="form-actions" style="justify-content: center; gap: 15px; margin-top: 0;">
@@ -619,35 +657,36 @@
             <button class="nav-tab" data-tab="expenses">Expenses</button>
             <button class="nav-tab" data-tab="inventory">Inventory</button>
         </div>
-        <button id="undo-button" class="btn btn-secondary" disabled>Undo Last Action</button>
+        <button id="undo-button" class="btn" disabled title="Undo Last Action">
+            &#8617; </button>
     </nav>
 
     <main class="main-content">
         <div id="dashboard-tab-content" class="tab-content active">
             <h1>Dashboard</h1>
             <div id="dashboard-grid" class="grid-container">
-                <div class="summary-card" data-filter="active" style="background: var(--success-color);">
+                <div class="summary-card" data-filter="active" style="background: linear-gradient(135deg, #34C759 0%, #28a745 100%);">
                     <div class="icon">👥</div>
                     <div>
                         <div class="value" id="activeUsers">0</div>
                         <div class="label">Active Users</div>
                     </div>
                 </div>
-                <div class="summary-card" data-filter="expired" style="background: var(--danger-color);">
+                <div class="summary-card" data-filter="expired" style="background: linear-gradient(135deg, #FF3B30 0%, #dc3545 100%);">
                     <div class="icon">🚫</div>
                     <div>
                         <div class="value" id="expiredUsers">0</div>
                         <div class="label">Expired Users</div>
                     </div>
                 </div>
-                <div class="summary-card" data-filter="unpaid" style="background: var(--warning-color);">
+                <div class="summary-card" data-filter="unpaid" style="background: linear-gradient(135deg, #FF9500 0%, #fd7e14 100%);">
                     <div class="icon">⚠️</div>
                     <div>
                         <div class="value" id="unpaidCount">0</div>
                         <div class="label">Unpaid Customers</div>
                     </div>
                 </div>
-                <div class="summary-card" data-filter="unpaid" style="background: #e11d48;">
+                <div class="summary-card" data-filter="unpaid" style="background: linear-gradient(135deg, #FF2D55 0%, #d63384 100%);">
                     <div class="icon">💵</div>
                     <div>
                         <div class="value" id="unpaidValue">$0.00</div>
@@ -663,21 +702,21 @@
                 <input type="month" id="reportMonth">
             </div>
             <div class="grid-container">
-                <div class="summary-card" style="background: var(--accent-color);">
+                <div class="summary-card" style="background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%);">
                     <div class="icon">💰</div>
                     <div>
                         <div class="value" id="reportIncome">$0.00</div>
                         <div class="label">Income</div>
                     </div>
                 </div>
-                 <div class="summary-card" style="background: var(--warning-color);">
+                 <div class="summary-card" style="background: linear-gradient(135deg, #FF9500 0%, #d97706 100%);">
                     <div class="icon">💸</div>
                     <div>
                         <div class="value" id="reportExpenses">-$0.00</div>
                         <div class="label">Expenses</div>
                     </div>
                 </div>
-                 <div class="summary-card" style="background: var(--info-color);">
+                 <div class="summary-card" style="background: linear-gradient(135deg, #5856D6 0%, #4c1d95 100%);">
                     <div class="icon">📊</div>
                     <div>
                         <div class="value" id="reportProfit">$0.00</div>
@@ -708,8 +747,8 @@
                         <div class="form-group"><label for="paymentAmount">Payment Amount ($)</label><input type="number" id="paymentAmount" name="paymentAmount" min="0" step="0.01" required></div>
                         
                         <div class="form-group full-width">
-                            <label for="sell-item-checkbox" class="highlight-label" style="display: flex; align-items: center; gap: 8px; user-select: none;">
-                                <input type="checkbox" id="sell-item-checkbox" name="sellItem" style="width: auto;">
+                            <label for="sell-item-checkbox" class="highlight-label" style="display: flex; align-items: center; gap: 8px; user-select: none; cursor: pointer;">
+                                <input type="checkbox" id="sell-item-checkbox" name="sellItem" style="width: auto; margin: 0;">
                                 Sell Inventory Item?
                             </label>
                         </div>
@@ -782,7 +821,7 @@
 
         <div id="inventory-tab-content" class="tab-content">
              <h1>Inventory Management</h1>
-              <div class="summary-card" style="background: var(--info-color);">
+              <div class="summary-card" style="background: linear-gradient(135deg, #5856D6 0%, #4c1d95 100%);">
                 <div class="icon">📦</div>
                 <div>
                     <div class="value" id="inventoryTotalValue">$0.00</div>
@@ -791,7 +830,7 @@
             </div>
             <div class="card">
                 <h2>Add Inventory Item</h2>
-                <form id="inventoryForm" class="grid-container" style="grid-template-columns: 1fr 1fr 1fr 1fr 1fr; align-items: flex-end;">
+                <form id="inventoryForm" class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: flex-end;">
                     <div class="form-group"><label for="itemName">Item Name</label><input type="text" id="itemName" name="itemName" placeholder="e.g., IPTV Box" required></div>
                     <div class="form-group"><label for="itemCategory">Category</label>
                         <select id="itemCategory" name="itemCategory">
@@ -806,7 +845,7 @@
                     </div>
                     <div class="form-group"><label for="itemCost">Purchase Cost/Item ($)</label><input type="number" id="itemCost" name="itemCost" min="0" step="0.01" required></div>
                     <div class="form-group"><label for="itemSaleValue">Sale Value/Item ($)</label><input type="number" id="itemSaleValue" name="itemSaleValue" min="0" step="0.01" required></div>
-                    <div class="form-group" style="grid-column: 5 / -1;"><button type="submit" class="btn btn-primary">Add to Inventory</button></div>
+                    <div class="form-group" style="grid-column: 1 / -1;"><button type="submit" class="btn btn-primary" style="width: 100%;">Add to Inventory</button></div>
                 </form>
             </div>
             <div class="card">
@@ -1553,63 +1592,6 @@
                     updateDoc(doc(db, `users/${userId}/customers`, docId), { status: newStatus });
                 }
             });
-            
-            inventoryTableBody.addEventListener('click', e => {
-                const target = e.target; const docId = target.dataset.id; if(!docId) return;
-                
-                if(target.classList.contains('btn-edit-inventory')) {
-                     target.closest('tr').innerHTML = renderInventoryRow_Edit(localInventory.find(i => i.id === docId));
-                } else if (target.classList.contains('btn-save-inventory')) {
-                    const row = target.closest('tr');
-                    updateDoc(doc(db, `users/${userId}/inventory`, docId), {
-                        name: row.querySelector('[data-prop="name"]').value, category: row.querySelector('[data-prop="category"]').value,
-                        quantity: parseInt(row.querySelector('[data-prop="quantity"]').value, 10),
-                        purchaseCost: parseFloat(row.querySelector('[data-prop="purchaseCost"]').value),
-                        saleValue: parseFloat(row.querySelector('[data-prop="saleValue"]').value),
-                        purchaseMethod: row.querySelector('[data-prop="purchaseMethod"]').value
-                    });
-                } else if (target.classList.contains('btn-cancel-inventory')) {
-                    renderInventoryTable();
-                } else if (target.classList.contains('btn-sold')) {
-                    const item = localInventory.find(i => i.id === docId);
-                    const quantitySold = parseInt(prompt(`How many "${item.name}" units were sold? (Available: ${item.quantity})`), 10);
-                    if(isNaN(quantitySold) || quantitySold <= 0 || quantitySold > item.quantity) {
-                        alert("Invalid quantity."); return;
-                    }
-                    const finalSalePrice = parseFloat(prompt(`Confirm sale price per item:`, item.saleValue));
-                     if(isNaN(finalSalePrice) || finalSalePrice < 0) {
-                        alert("Invalid sale price."); return;
-                    }
-
-                    const batch = writeBatch(db);
-                    const newQuantity = item.quantity - quantitySold;
-                    batch.update(doc(db, `users/${userId}/inventory`, docId), { quantity: newQuantity });
-                    const incomeDocRef = doc(collection(db, `users/${userId}/income`));
-                    batch.set(incomeDocRef, {
-                        date: new Date().toISOString(), source: 'inventory',
-                        itemId: docId, itemName: item.name, quantitySold,
-                        salePrice: finalSalePrice, totalIncome: finalSalePrice * quantitySold,
-                        profit: (finalSalePrice - item.purchaseCost) * quantitySold
-                    });
-                    batch.commit();
-                    
-                    setUndoAction(() => {
-                        const undoBatch = writeBatch(db);
-                        undoBatch.update(doc(db, `users/${userId}/inventory`, docId), { quantity: item.quantity });
-                        undoBatch.delete(incomeDocRef);
-                        undoBatch.commit();
-                    });
-                }
-            });
-
-            customerSearchInput.addEventListener('input', e => { searchQuery = e.target.value; displayCustomers(); });
-            customerTableHeader.addEventListener('click', e => {
-                const newSortColumn = e.target.dataset.sort; if (!newSortColumn) return;
-                if (sortColumn === newSortColumn) { sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'; } 
-                else { sortColumn = newSortColumn; sortDirection = 'desc'; }
-                displayCustomers();
-            });
-            reportMonthEl.addEventListener('change', updateMonthlyReport);
             
             // Updated delete listener with Confirmation Modal for Expense and Inventory
             const createDeleteListener = (container, collectionName) => {
