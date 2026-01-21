@@ -11,6 +11,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Media26">
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
             /* Apple/Glass Theme Variables */
@@ -715,6 +717,13 @@
                 </div>
             </div>
 
+            <div class="card" style="margin-top: 30px;">
+                <h2>Revenue Analytics (Last 6 Months)</h2>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
             <hr class="page-breaker">
 
             <div class="report-header">
@@ -1094,6 +1103,10 @@
             const statusText = isExpired ? 'Expired' : 'Active';
             const statusClass = isExpired ? 'sub-status-expired' : 'sub-status-active';
             const expiryDateClass = isExpired ? 'expired' : 'active';
+            
+            // WhatsApp Pre-filled Message
+            const waMessage = `Hi ${customer.name}, your Media26 subscription expires on ${formatDisplayDate(customer.endDate)}. Would you like to renew?`;
+            const waLink = `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
            
             return `
                 <td>${customer.name}</td>
@@ -1110,6 +1123,9 @@
                     </select>
                 </td>
                 <td class="actions-cell">
+                    <a href="${waLink}" target="_blank" class="btn" style="background-color: #25D366; color: white; padding: 6px 12px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" title="Send Reminder">
+                        💬
+                    </a>
                     <button class="btn btn-edit" data-id="${customer.id}">Edit</button>
                     <button class="btn btn-danger btn-delete-customer" data-id="${customer.id}">Delete</button>
                 </td>`;
@@ -1266,6 +1282,115 @@
             reportIncomeEl.textContent = formatCurrency(totalIncome);
             reportExpensesEl.textContent = `-${formatCurrency(monthlyExpenses)}`;
             reportProfitEl.textContent = formatCurrency(monthlyProfit);
+        };
+
+        // --- CHART LOGIC ---
+        let revenueChartInstance = null;
+
+        const updateRevenueChart = () => {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            // Generate Data for Last 6 Months
+            const months = [];
+            const incomeData = [];
+            const expenseData = [];
+            const today = new Date();
+            
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const monthName = d.toLocaleString('default', { month: 'short' });
+                months.push(monthName);
+                
+                const targetMonth = d.getMonth();
+                const targetYear = d.getFullYear();
+
+                // Calculate Monthly Income (Subscriptions + Inventory)
+                const subIncome = allCustomers.reduce((sum, c) => {
+                    const subDate = new Date(c.subDate);
+                    if (c.status === 'Paid' && subDate.getMonth() === targetMonth && subDate.getFullYear() === targetYear) {
+                        return sum + (Number(c.amount) || 0);
+                    }
+                    return sum;
+                }, 0);
+
+                const invIncome = localIncome.reduce((sum, item) => {
+                    const date = new Date(item.date);
+                    if (date.getMonth() === targetMonth && date.getFullYear() === targetYear) {
+                        return sum + (Number(item.totalIncome) || 0);
+                    }
+                    return sum;
+                }, 0);
+                
+                incomeData.push(subIncome + invIncome);
+
+                // Calculate Monthly Expenses
+                const exp = localExpenses.reduce((sum, e) => {
+                    const date = new Date(e.date);
+                    if (date.getMonth() === targetMonth && date.getFullYear() === targetYear) {
+                        return sum + (Number(e.amount) || 0);
+                    }
+                    return sum;
+                }, 0);
+                expenseData.push(exp);
+            }
+
+            // Destroy old chart to prevent overlaps
+            if (revenueChartInstance) {
+                revenueChartInstance.destroy();
+            }
+
+            // Render New Chart
+            revenueChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: incomeData,
+                            borderColor: '#34C759',
+                            backgroundColor: 'rgba(52, 199, 89, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Expenses',
+                            data: expenseData,
+                            borderColor: '#FF3B30',
+                            backgroundColor: 'rgba(255, 59, 48, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
         };
 
         const updateSummary = () => {
@@ -1679,19 +1804,19 @@
                 allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 localCustomers = allCustomers.filter(c => !c.archived);
                 checkSystemAlerts(localCustomers);
-                displayCustomers(); updateSummary(); updateMonthlyReport();
+                displayCustomers(); updateSummary(); updateMonthlyReport(); updateRevenueChart();
             });
             onSnapshot(collection(db, `users/${userId}/expenses`), (snapshot) => {
                 localExpenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderExpensesTable(); updateMonthlyReport();
+                renderExpensesTable(); updateMonthlyReport(); updateRevenueChart();
             });
-            onSnapshot(collection(db, `users/${userId}/inventory`), (snapshot) => {
+             onSnapshot(collection(db, `users/${userId}/inventory`), (snapshot) => {
                 localInventory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderInventoryTable(); updateInventorySummary(); populateInventoryDropdown();
             });
              onSnapshot(collection(db, `users/${userId}/income`), (snapshot) => {
                 localIncome = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                updateMonthlyReport();
+                updateMonthlyReport(); updateRevenueChart();
             });
 
             const initialTab = window.location.hash.substring(1) || 'dashboard';
