@@ -980,17 +980,20 @@
         let searchQuery = '';
         let currentFilter = 'all';
         let lastAction = null;
+        let undoMessageText = "Action successfully undone.";
         let confirmCallback = null; // Stores the action to run when "Yes" is clicked
 
         // --- UNDO FUNCTIONALITY ---
-        const setUndoAction = (undoCallback) => {
+        const setUndoAction = (undoCallback, message = "Action successfully undone.") => {
             lastAction = undoCallback;
+            undoMessageText = message;
             undoButton.disabled = false;
         };
 
         undoButton.addEventListener('click', () => {
             if (typeof lastAction === 'function') {
                 lastAction();
+                showConfirmationToast(undoMessageText); // Shows the toast message
                 lastAction = null;
                 undoButton.disabled = true;
             }
@@ -1592,7 +1595,13 @@
                         endDate: formData.get('subscriptionEndingDate'), status: formData.get('paymentStatus'),
                         amount: parseFloat(formData.get('paymentAmount')), specialNote: formData.get('specialNote'),
                     };
-                    await updateDoc(doc(db, `users/${userId}/customers`, currentlyEditingCustomerId), customerData);
+                    const originalCustomer = allCustomers.find(c => c.id === currentlyEditingCustomerId);
+                    const originalData = { ...originalCustomer };
+                    const docIdToUndo = currentlyEditingCustomerId;
+                    
+                    await updateDoc(doc(db, `users/${userId}/customers`, docIdToUndo), customerData);
+                    setUndoAction(() => { updateDoc(doc(db, `users/${userId}/customers`, docIdToUndo), originalData); });
+                    
                     showConfirmationToast(`Customer "${customerData.name}" has been updated.`);
                     resetCustomerForm();
                 } else {
@@ -1615,6 +1624,10 @@
                     const newCustomerRef = doc(collection(db, `users/${userId}/customers`));
                     batch.set(newCustomerRef, newCustomer);
 
+                    let originalInventoryQty = null;
+                    let inventoryItemId = null;
+                    let newIncomeDocRef = null;
+
                     if (sellItemCheckbox.checked) {
                         const itemId = inventoryItemSelect.value;
                         const price = parseFloat(inventorySalePrice.value);
@@ -1622,10 +1635,12 @@
                         
                         const itemToSell = localInventory.find(i => i.id === itemId);
                         if (itemToSell && itemToSell.quantity > 0) {
+                            inventoryItemId = itemId;
+                            originalInventoryQty = itemToSell.quantity;
                             const newQuantity = itemToSell.quantity - 1;
                             batch.update(doc(db, `users/${userId}/inventory`, itemId), { quantity: newQuantity });
-                            const incomeDocRef = doc(collection(db, `users/${userId}/income`));
-                            batch.set(incomeDocRef, {
+                            newIncomeDocRef = doc(collection(db, `users/${userId}/income`));
+                            batch.set(newIncomeDocRef, {
                                 date: new Date().toISOString(), source: 'inventory_sale_at_signup',
                                 itemId: itemId, itemName: itemToSell.name, quantitySold: 1,
                                 salePrice: price, totalIncome: price,
@@ -1637,6 +1652,19 @@
                     }
 
                     await batch.commit();
+                    
+                    setUndoAction(() => {
+                        const undoBatch = writeBatch(db);
+                        undoBatch.delete(doc(db, `users/${userId}/customers`, newCustomerRef.id));
+                        if (inventoryItemId && originalInventoryQty !== null) {
+                            undoBatch.update(doc(db, `users/${userId}/inventory`, inventoryItemId), { quantity: originalInventoryQty });
+                        }
+                        if (newIncomeDocRef) {
+                            undoBatch.delete(doc(db, `users/${userId}/income`, newIncomeDocRef.id));
+                        }
+                        undoBatch.commit();
+                    });
+
                     const subType = formData.get('subscriptionType');
                     const subText = subType === 'trial' ? 'a trial' : `a ${subType}-month`;
                     showConfirmationToast(`Customer "${newCustomer.name}" created with ${subText} subscription.`);
@@ -1654,18 +1682,19 @@
                 inventorySalePrice.value = selectedOption.dataset.saleValue || '';
             });
 
-            expenseForm.addEventListener('submit', e => {
+            expenseForm.addEventListener('submit', async e => {
                 e.preventDefault();
-                addDoc(collection(db, `users/${userId}/expenses`), {
+                const docRef = await addDoc(collection(db, `users/${userId}/expenses`), {
                     description: e.target.expenseType.value,
                     amount: parseFloat(e.target.expenseAmount.value),
                     date: e.target.expenseDate.value
                 });
+                setUndoAction(() => { deleteDoc(doc(db, `users/${userId}/expenses`, docRef.id)); });
                 expenseForm.reset();
                 document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
             });
             
-            inventoryForm.addEventListener('submit', e => {
+            inventoryForm.addEventListener('submit', async e => {
                 e.preventDefault();
                 const newItem = {
                     name: e.target.itemName.value, category: e.target.itemCategory.value,
@@ -1676,7 +1705,8 @@
                     alert("Please enter valid numbers for quantity, cost, and sale value.");
                     return;
                 }
-                addDoc(collection(db, `users/${userId}/inventory`), newItem);
+                const docRef = await addDoc(collection(db, `users/${userId}/inventory`), newItem);
+                setUndoAction(() => { deleteDoc(doc(db, `users/${userId}/inventory`, docRef.id)); });
                 inventoryForm.reset();
             });
 
@@ -1736,22 +1766,22 @@
                     const customer = allCustomers.find(c => c.id === docId);
                     const isExpired = new Date(customer.endDate) < new Date();
 
-                    if (isExpired) {
-                        updateDoc(doc(db, `users/${userId}/customers`, docId), { archived: true });
-                        setUndoAction(() => { updateDoc(doc(db, `users/${userId}/customers`, docId), { archived: false }); });
-                    } else {
-                        // Use Professional Custom Modal
-                        confirmModalTitle.textContent = "Delete Active User?";
-                        confirmModalMessage.textContent = `Are you sure you want to permanently delete ${customer.name}? This action cannot be undone.`;
-                        
-                        confirmCallback = () => {
+                    // Always trigger the Confirmation Modal
+                    confirmModalTitle.textContent = isExpired ? "Delete Expired User?" : "Delete Active User?";
+                    confirmModalMessage.textContent = `Are you sure you want to permanently delete ${customer.name}? This action cannot be undone.`;
+                    
+                    confirmCallback = () => {
+                        if (isExpired) {
+                            updateDoc(doc(db, `users/${userId}/customers`, docId), { archived: true });
+                            setUndoAction(() => { updateDoc(doc(db, `users/${userId}/customers`, docId), { archived: false }); });
+                        } else {
                             deleteDoc(doc(db, `users/${userId}/customers`, docId));
                             setUndoAction(() => { setDoc(doc(db, `users/${userId}/customers`, docId), customer); });
-                            showConfirmationToast("User deleted successfully.");
-                        };
-                        
-                        confirmModal.classList.add('show');
-                    }
+                        }
+                        showConfirmationToast("User deleted successfully.");
+                    };
+                    
+                    confirmModal.classList.add('show');
                 }
             });
             
@@ -1760,6 +1790,7 @@
                 if (e.target.classList.contains('btn-quick-pay')) {
                     const docId = e.target.dataset.id;
                     await updateDoc(doc(db, `users/${userId}/customers`, docId), { status: 'Paid' });
+                    setUndoAction(() => { updateDoc(doc(db, `users/${userId}/customers`, docId), { status: 'Unpaid' }); });
                     e.target.closest('li').remove(); // Remove line from modal immediately
                     showConfirmationToast("Payment marked as paid!");
                 }
@@ -1800,7 +1831,11 @@
                 if (target.classList.contains('payment-status-select')) {
                     const docId = target.dataset.id;
                     const newStatus = target.value;
+                    const oldStatus = newStatus === 'Paid' ? 'Unpaid' : 'Paid';
                     updateDoc(doc(db, `users/${userId}/customers`, docId), { status: newStatus });
+                    setUndoAction(() => { 
+                        updateDoc(doc(db, `users/${userId}/customers`, docId), { status: oldStatus });
+                    });
                 }
             });
             
