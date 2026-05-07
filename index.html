@@ -304,21 +304,21 @@
         
         .grid-container {
             display: grid;
-            /* Improved Grid: Min 240px prevents squishing */
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
+            /* Tighter desktop grid: more cards per row */
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
         }
-        
+
         .summary-card {
             display: flex;
             align-items: center;
-            gap: 20px;
-            padding: 24px;
-            border-radius: var(--radius-card);
+            gap: 14px;
+            padding: 16px 18px;
+            border-radius: 16px;
             color: #fff;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 10px 20px -10px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 14px -8px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.2);
             position: relative;
             overflow: hidden;
@@ -335,12 +335,12 @@
         }
         .summary-card:hover::before { transform: translateX(100%); }
         .summary-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 22px -10px rgba(0,0,0,0.3);
         }
-        .summary-card .icon { font-size: 1.8em; z-index: 2; }
-        .summary-card .value { font-size: 2em; font-weight: 700; line-height: 1.1; z-index: 2; }
-        .summary-card .label { font-size: 0.9em; opacity: 0.95; font-weight: 500; z-index: 2; }
+        .summary-card .icon { font-size: 1.4em; z-index: 2; flex-shrink: 0; }
+        .summary-card .value { font-size: 1.5em; font-weight: 700; line-height: 1.1; z-index: 2; }
+        .summary-card .label { font-size: 0.78em; opacity: 0.95; font-weight: 500; z-index: 2; line-height: 1.25; }
         
         /* --- Forms & Inputs --- */
         .form-group { display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; }
@@ -678,9 +678,10 @@
             h1 { font-size: 1.55em; margin-bottom: 18px; letter-spacing: -0.01em; }
             h2 { font-size: 1.2em; margin-bottom: 14px; }
 
+            /* Dashboard cards: 2 per row on mobile (compact) */
             .grid-container {
-                grid-template-columns: 1fr;
-                gap: 14px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
             }
 
             #inventoryForm, #newCustomerForm .grid-container, #expenseForm {
@@ -711,76 +712,115 @@
             #customerSearch { width: 100%; font-size: 16px; }
             .customer-list-header { flex-direction: column; align-items: stretch; }
 
-            /* Summary cards: more compact on mobile */
-            .summary-card { padding: 18px; gap: 16px; }
-            .summary-card .value { font-size: 1.7em; }
-            .summary-card .label { font-size: 0.85em; }
-            .summary-card .icon { font-size: 1.55em; }
-
-            /* === MOBILE CUSTOMER TABLE → CARD LAYOUT === */
-            #customer-table thead { display: none; }
-            #customer-table, #customer-table tbody, #customer-table tr, #customer-table td {
-                display: block;
-                width: 100%;
-                box-sizing: border-box;
-            }
-            #customer-table tr {
-                background: rgba(255,255,255,0.7);
-                margin-bottom: 12px;
-                border-radius: 14px;
-                padding: 14px 16px;
-                border: 1px solid rgba(0,0,0,0.06);
-                box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-                white-space: normal;
-            }
-            #customer-table tr.row-expired {
-                background-color: rgba(255, 59, 48, 0.07) !important;
-                border-color: rgba(255, 59, 48, 0.2);
-            }
-            #customer-table tr.row-expires-soon {
-                background-color: rgba(255, 149, 0, 0.08) !important;
-                border-color: rgba(255, 149, 0, 0.25);
-            }
-            #customer-table td {
-                border-bottom: none;
-                padding: 6px 0;
-                white-space: normal;
-                font-size: 0.95em;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
+            /* Compact summary cards on mobile - 2 per row */
+            .summary-card {
+                padding: 12px 14px;
                 gap: 10px;
+                border-radius: 14px;
+                min-height: 0;
             }
-            #customer-table td::before {
-                content: attr(data-label);
-                font-weight: 700;
-                font-size: 0.72em;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                color: var(--text-secondary);
-                flex-shrink: 0;
+            .summary-card .value { font-size: 1.15em; }
+            .summary-card .label { font-size: 0.7em; line-height: 1.2; }
+            .summary-card .icon { font-size: 1.15em; }
+            /* Hide shine animation on mobile - small cards don't need it */
+            .summary-card::before { display: none; }
+
+            /* Dashboard heading & spacing tighter */
+            #dashboard-tab-content h1 { font-size: 1.35em; margin-bottom: 12px; }
+            #dashboard-tab-content h2 { font-size: 1em; margin-bottom: 10px; }
+            .report-header { margin-bottom: 12px; }
+            .card { padding: 14px; margin-bottom: 14px; }
+            hr.page-breaker { margin: 20px 0; }
+
+            /* === MOBILE CUSTOMER TABLE → EXCEL-STYLE WITH FROZEN NAME COLUMN === */
+            /* Make the table scroll horizontally inside a fixed-width container */
+            #customers-tab-content .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                background: rgba(255,255,255,0.5);
+                border: 1px solid rgba(0,0,0,0.06);
+                border-radius: 12px;
+                /* Subtle shadow on the frozen column edge becomes visible when scrolled */
+                position: relative;
             }
-            #customer-table td.customer-name-cell {
-                font-size: 1.1em;
-                font-weight: 700;
-                padding-bottom: 10px;
-                margin-bottom: 6px;
-                border-bottom: 1px solid rgba(0,0,0,0.06);
-                justify-content: flex-start;
+            #customer-table {
+                width: auto;
+                min-width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
             }
-            #customer-table td.customer-name-cell::before { display: none; }
+            #customer-table thead { display: table-header-group; }
+            #customer-table tbody { display: table-row-group; }
+            #customer-table tr { display: table-row; }
+            #customer-table th,
+            #customer-table td {
+                display: table-cell;
+                white-space: nowrap;
+                padding: 10px 12px;
+                font-size: 0.85em;
+                vertical-align: middle;
+                border-bottom: 1px solid rgba(0,0,0,0.05);
+            }
+            #customer-table thead th {
+                font-size: 0.7em;
+                padding: 10px 12px;
+                background-color: #f5f5f7;
+                position: sticky;
+                top: 0;
+                z-index: 3;
+            }
+            /* === FREEZE THE NAME COLUMN (1st column) === */
+            #customer-table th:first-child,
+            #customer-table td:first-child {
+                position: sticky;
+                left: 0;
+                z-index: 2;
+                background-color: #ffffff;
+                box-shadow: 2px 0 4px -2px rgba(0,0,0,0.12);
+                min-width: 130px;
+                max-width: 160px;
+                font-weight: 600;
+                font-size: 0.92em;
+                white-space: normal;
+                word-break: break-word;
+                line-height: 1.25;
+            }
+            #customer-table thead th:first-child {
+                z-index: 4; /* above frozen body cells AND above other headers */
+                background-color: #ececf0;
+            }
+            /* Frozen column stays colored even when row is expired/expiring */
+            #customer-table tr.row-expired td:first-child {
+                background-color: #fff0ef;
+            }
+            #customer-table tr.row-expires-soon td:first-child {
+                background-color: #fff7e8;
+            }
+            /* Row tint for expired/expiring (still applies to non-frozen cells) */
+            #customer-table tr.row-expired { background-color: rgba(255, 59, 48, 0.06) !important; }
+            #customer-table tr.row-expires-soon { background-color: rgba(255, 149, 0, 0.07) !important; }
+
+            /* Compact action buttons inside the row */
             #customer-table td.actions-cell {
-                justify-content: flex-end;
-                flex-wrap: wrap;
-                padding-top: 12px;
-                margin-top: 6px;
-                border-top: 1px solid rgba(0,0,0,0.06);
-                gap: 6px;
+                display: table-cell;
+                white-space: nowrap;
             }
-            #customer-table td.actions-cell::before { display: none; }
-            #customer-table td.actions-cell .btn { padding: 7px 11px; font-size: 0.82em; flex: 0 1 auto; }
-            #customer-table td.expiry-cell { justify-content: space-between; }
-            .table-container { background: transparent; border: none; overflow-x: visible; }
+            #customer-table td.actions-cell .btn {
+                padding: 5px 9px;
+                font-size: 0.78em;
+                margin-right: 3px;
+            }
+            #customer-table td.actions-cell a.btn {
+                padding: 4px 8px;
+            }
+            /* Compact payment select & day badge */
+            .payment-status-select { padding: 4px 8px; font-size: 0.8em; }
+            .days-left-badge { font-size: 0.75em; min-width: 60px; padding: 4px 9px; }
+            .status-badge { padding: 4px 9px; font-size: 0.7em; }
+            .expiry-date { font-size: 0.82em; padding: 3px 8px; }
+
+            /* Hide the data-label pseudo-elements that the previous card-mode used */
+            #customer-table td::before { content: none !important; display: none !important; }
 
             /* Modal tightening on mobile */
             .modal-content { padding: 22px 20px; max-height: 88vh; }
