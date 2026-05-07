@@ -565,46 +565,235 @@
             color: var(--accent-color);
             font-size: 1em;
         }
-        
+
+        /* --- Days Left Countdown Badge --- */
+        .days-left-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 11px;
+            border-radius: 50px;
+            font-size: 0.82em;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            min-width: 70px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .days-left-badge.healthy { background-color: rgba(52, 199, 89, 0.15); color: #1d7d34; }
+        .days-left-badge.warning { background-color: rgba(255, 149, 0, 0.18); color: #b45309; }
+        .days-left-badge.critical { background-color: rgba(255, 59, 48, 0.18); color: var(--danger-color); animation: pulseCritical 1.8s ease-in-out infinite; }
+        .days-left-badge.expired { background-color: rgba(120, 120, 128, 0.18); color: #555; }
+
+        @keyframes pulseCritical {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+
+        /* --- Alert Bell (Persistent Unpaid Notifier) --- */
+        #alert-bell-btn {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            padding: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.5);
+            color: var(--text-primary);
+            cursor: pointer;
+            margin-right: 8px;
+            transition: all 0.2s;
+        }
+        #alert-bell-btn.active {
+            display: inline-flex;
+            background: rgba(255, 59, 48, 0.12);
+            border-color: rgba(255, 59, 48, 0.3);
+            color: var(--danger-color);
+            animation: bellShake 2.5s ease-in-out infinite;
+        }
+        #alert-bell-btn:hover { background: rgba(255, 59, 48, 0.2); }
+        #alert-bell-btn .bell-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--danger-color);
+            color: #fff;
+            font-size: 0.65em;
+            font-weight: 700;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        @keyframes bellShake {
+            0%, 90%, 100% { transform: rotate(0deg); }
+            92% { transform: rotate(-12deg); }
+            94% { transform: rotate(10deg); }
+            96% { transform: rotate(-8deg); }
+            98% { transform: rotate(6deg); }
+        }
+        .nav-right-controls { display: flex; align-items: center; gap: 4px; }
+
+        /* Persistent reminder footer in alert modal */
+        .alert-modal-footer-note {
+            margin-top: 16px;
+            padding: 10px 14px;
+            background: rgba(255, 149, 0, 0.1);
+            border-left: 3px solid var(--warning-color);
+            border-radius: 8px;
+            font-size: 0.85em;
+            color: #b45309;
+            line-height: 1.45;
+        }
+        .btn-mark-all-paid {
+            margin-top: 10px;
+            width: 100%;
+            background: rgba(52, 199, 89, 0.15);
+            color: #1d7d34;
+            border: 1px solid rgba(52, 199, 89, 0.3);
+        }
+        .btn-mark-all-paid:hover { background: rgba(52, 199, 89, 0.25); }
+
+        /* --- Daily Revenue Projection Card (Dashboard) --- */
+        .summary-card.projection-card {
+            background: linear-gradient(135deg, #00C2A8 0%, #0891b2 100%);
+        }
+
         /* Mobile Responsiveness Improvements */
         @media (max-width: 768px) {
-            body { font-size: 14px; }
-            .top-nav { padding: 0 15px; height: 60px; } /* Reduced padding */
-            .nav-tab { padding: 8px 12px; font-size: 0.9em; }
-            .main-content { padding: 15px; height: auto; } /* Reduced padding to prevent overflow */
-            .card { padding: 15px; margin-bottom: 20px; } /* Reduced padding for input space */
-            h1 { font-size: 1.6em; margin-bottom: 20px; }
-            h2 { font-size: 1.3em; margin-bottom: 15px; }
-            
+            body { font-size: 15px; }
+            .top-nav { padding: 0 12px; height: 58px; }
+            .nav-tab { padding: 8px 13px; font-size: 0.92em; }
+            .main-content { padding: 14px 12px; height: auto; }
+            .card { padding: 16px; margin-bottom: 18px; border-radius: 16px; }
+            h1 { font-size: 1.55em; margin-bottom: 18px; letter-spacing: -0.01em; }
+            h2 { font-size: 1.2em; margin-bottom: 14px; }
+
             .grid-container {
-                /* On very small mobile, single column is safer */
                 grid-template-columns: 1fr;
+                gap: 14px;
             }
-            
+
             #inventoryForm, #newCustomerForm .grid-container, #expenseForm {
-                grid-template-columns: 100% !important; /* Force full width column */
-                display: block; /* Ensure block layout to avoid grid complexities */
+                grid-template-columns: 100% !important;
+                display: block;
             }
-            /* Add spacing for stacked form items */
             #newCustomerForm .grid-container .form-group {
-                margin-bottom: 15px;
+                margin-bottom: 14px;
             }
 
-            /* Fix overlapping inputs on mobile by making them slightly smaller */
             input, select, textarea {
-                width: 96% !important; 
-                max-width: 96% !important;
-            }
-            
-            #undo-button {
-                width: 36px; height: 36px;
-                font-size: 1.1em;
+                width: 100% !important;
+                max-width: 100% !important;
+                font-size: 16px; /* Prevents iOS auto-zoom on focus */
+                padding: 13px 14px;
             }
 
-            th, td { padding: 12px; font-size: 0.9em; }
-            .btn { padding: 8px 14px; font-size: 0.9em; }
-            #customerSearch { width: 100%; }
+            label {
+                font-size: 0.78em;
+            }
+
+            #undo-button, #alert-bell-btn {
+                width: 38px; height: 38px;
+                font-size: 1.05em;
+            }
+
+            .btn { padding: 10px 14px; font-size: 0.92em; }
+            #customerSearch { width: 100%; font-size: 16px; }
             .customer-list-header { flex-direction: column; align-items: stretch; }
+
+            /* Summary cards: more compact on mobile */
+            .summary-card { padding: 18px; gap: 16px; }
+            .summary-card .value { font-size: 1.7em; }
+            .summary-card .label { font-size: 0.85em; }
+            .summary-card .icon { font-size: 1.55em; }
+
+            /* === MOBILE CUSTOMER TABLE → CARD LAYOUT === */
+            #customer-table thead { display: none; }
+            #customer-table, #customer-table tbody, #customer-table tr, #customer-table td {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            #customer-table tr {
+                background: rgba(255,255,255,0.7);
+                margin-bottom: 12px;
+                border-radius: 14px;
+                padding: 14px 16px;
+                border: 1px solid rgba(0,0,0,0.06);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+                white-space: normal;
+            }
+            #customer-table tr.row-expired {
+                background-color: rgba(255, 59, 48, 0.07) !important;
+                border-color: rgba(255, 59, 48, 0.2);
+            }
+            #customer-table tr.row-expires-soon {
+                background-color: rgba(255, 149, 0, 0.08) !important;
+                border-color: rgba(255, 149, 0, 0.25);
+            }
+            #customer-table td {
+                border-bottom: none;
+                padding: 6px 0;
+                white-space: normal;
+                font-size: 0.95em;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 10px;
+            }
+            #customer-table td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                font-size: 0.72em;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: var(--text-secondary);
+                flex-shrink: 0;
+            }
+            #customer-table td.customer-name-cell {
+                font-size: 1.1em;
+                font-weight: 700;
+                padding-bottom: 10px;
+                margin-bottom: 6px;
+                border-bottom: 1px solid rgba(0,0,0,0.06);
+                justify-content: flex-start;
+            }
+            #customer-table td.customer-name-cell::before { display: none; }
+            #customer-table td.actions-cell {
+                justify-content: flex-end;
+                flex-wrap: wrap;
+                padding-top: 12px;
+                margin-top: 6px;
+                border-top: 1px solid rgba(0,0,0,0.06);
+                gap: 6px;
+            }
+            #customer-table td.actions-cell::before { display: none; }
+            #customer-table td.actions-cell .btn { padding: 7px 11px; font-size: 0.82em; flex: 0 1 auto; }
+            #customer-table td.expiry-cell { justify-content: space-between; }
+            .table-container { background: transparent; border: none; overflow-x: visible; }
+
+            /* Modal tightening on mobile */
+            .modal-content { padding: 22px 20px; max-height: 88vh; }
+            .modal-content h3 { font-size: 1.15rem; }
+            .alert-section h4 { font-size: 0.95em; }
+            .alert-list li { padding: 8px 0; font-size: 0.93em; flex-wrap: wrap; gap: 8px; }
+        }
+
+        @media (max-width: 380px) {
+            body { font-size: 14.5px; }
+            .nav-tab { padding: 7px 11px; font-size: 0.88em; }
+            h1 { font-size: 1.4em; }
+            .summary-card .value { font-size: 1.5em; }
         }
     </style>
 </head>
@@ -617,7 +806,6 @@
             <button id="alert-modal-close" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Close</button>
         </div>
     </div>
-    
     <div id="renew-modal" class="modal-overlay">
         <div class="modal-content glass-panel">
             <div class="modal-header">
@@ -679,8 +867,13 @@
             <button class="nav-tab" data-tab="expenses">Expenses</button>
             <button class="nav-tab" data-tab="inventory">Inventory</button>
         </div>
-        <button id="undo-button" class="btn" disabled title="Undo Last Action">
-            &#8617; </button>
+        <div class="nav-right-controls">
+            <button id="alert-bell-btn" title="View Pending Payment Alerts">
+                🔔<span class="bell-count" id="alert-bell-count">0</span>
+            </button>
+            <button id="undo-button" class="btn" disabled title="Undo Last Action">
+                &#8617; </button>
+        </div>
     </nav>
 
     <main class="main-content">
@@ -713,6 +906,20 @@
                     <div>
                         <div class="value" id="unpaidValue">$0.00</div>
                         <div class="label">Unpaid Value</div>
+                    </div>
+                </div>
+                <div class="summary-card projection-card">
+                    <div class="icon">📈</div>
+                    <div>
+                        <div class="value" id="projectedMonthly">$0.00</div>
+                        <div class="label">Active MRR (Projected)</div>
+                    </div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #FF9500 0%, #c2410c 100%);">
+                    <div class="icon">⏰</div>
+                    <div>
+                        <div class="value" id="expiringSoonCount">0</div>
+                        <div class="label">Expiring in 7 Days</div>
                     </div>
                 </div>
             </div>
@@ -815,6 +1022,7 @@
                                 <th data-sort="name">Name</th>
                                 <th data-sort="subDate">Started On</th>
                                 <th data-sort="endDate">Expiry</th>
+                                <th data-sort="daysLeft">Days Left</th>
                                 <th data-sort="status">Subscription Status</th>
                                 <th data-sort="paymentStatus">Payment Status</th>
                                 <th>Actions</th>
@@ -962,7 +1170,13 @@
         const subscriptionDate = document.getElementById('subscriptionDate');
         const subscriptionEndingDate = document.getElementById('subscriptionEndingDate');
         const paymentAmountInput = document.getElementById('paymentAmount');
-        
+
+        // --- New: Bell + Projection refs ---
+        const alertBellBtn = document.getElementById('alert-bell-btn');
+        const alertBellCount = document.getElementById('alert-bell-count');
+        const projectedMonthlyEl = document.getElementById('projectedMonthly');
+        const expiringSoonCountEl = document.getElementById('expiringSoonCount');
+
         // --- GLOBAL & STATE VARIABLES ---
         let currentlyEditingCustomerId = null;
         let customerToRenewId = null;
@@ -971,7 +1185,7 @@
         let localExpenses = [];
         let localInventory = [];
         let localIncome = [];
-        let alertedPaymentCustomers = new Set();
+        // NOTE: Removed alertedPaymentCustomers Set - alerts now persist until paid
         let alertedExpiryCustomers = new Set();
         let userId = "gL1KLYx6NqdokNaHoY3zhUvoRPo1";
         let db;
@@ -982,6 +1196,8 @@
         let lastAction = null;
         let undoMessageText = "Action successfully undone.";
         let confirmCallback = null; // Stores the action to run when "Yes" is clicked
+        let initialAlertShown = false; // Track first-load alert popup
+        let pendingReminderInterval = null; // Recurring reminder timer
 
         // --- UNDO FUNCTIONALITY ---
         const setUndoAction = (undoCallback, message = "Action successfully undone.") => {
@@ -1102,11 +1318,32 @@
 
         // --- RENDER FUNCTIONS ---
         const renderRow_ViewMode = (customer) => {
-            const isExpired = new Date(customer.endDate) < new Date();
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const endDate = new Date(customer.endDate);
+            const isExpired = endDate < today;
             const statusText = isExpired ? 'Expired' : 'Active';
             const statusClass = isExpired ? 'sub-status-expired' : 'sub-status-active';
             const expiryDateClass = isExpired ? 'expired' : 'active';
-            
+
+            // Days Left calculation
+            const daysLeft = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+            let daysLeftClass = 'healthy';
+            let daysLeftText = `${daysLeft} days`;
+            if (daysLeft < 0) {
+                daysLeftClass = 'expired';
+                daysLeftText = `${Math.abs(daysLeft)}d overdue`;
+            } else if (daysLeft === 0) {
+                daysLeftClass = 'critical';
+                daysLeftText = 'Today';
+            } else if (daysLeft === 1) {
+                daysLeftClass = 'critical';
+                daysLeftText = 'Tomorrow';
+            } else if (daysLeft <= 5) {
+                daysLeftClass = 'critical';
+            } else if (daysLeft <= 14) {
+                daysLeftClass = 'warning';
+            }
+
             // Existing Expiry Reminder Logic
             const waMessage = isExpired 
                 ? `Hi ${customer.name}, your Media26 subscription expired on ${formatDisplayDate(customer.endDate)}. Would you like to renew?`
@@ -1114,17 +1351,16 @@
 
             const waLink = `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
 
-            // --- NEW: Overdue Payment Reminder Logic ---
+            // --- Overdue Payment Reminder Logic ---
             let overdueButtonHtml = '';
             if (customer.status === 'Unpaid') {
                 const subDate = new Date(customer.subDate);
-                const today = new Date();
-                const diffTime = Math.abs(today - subDate);
+                const todayForOverdue = new Date();
+                const diffTime = Math.abs(todayForOverdue - subDate);
                 const daysOverdue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                 // Only show if more than 5 days overdue
                 if (daysOverdue > 5) {
-                    // Soft, gentle tone
                     const overdueMsg = `Hi ${customer.name}, hope you're doing well! Just a gentle reminder that your IPTV Subscription payment has been pending for ${daysOverdue} days. We'd appreciate it if you could check this when you have a moment. Thanks!`;
                     const overdueLink = `https://wa.me/?text=${encodeURIComponent(overdueMsg)}`;
                     
@@ -1141,14 +1377,15 @@
             }
            
             return `
-                <td>${customer.name}</td>
-                <td>${formatDisplayDate(customer.subDate)}</td>
-                <td class="expiry-cell">
+                <td class="customer-name-cell" data-label="Name">${customer.name}</td>
+                <td data-label="Started On">${formatDisplayDate(customer.subDate)}</td>
+                <td class="expiry-cell" data-label="Expiry">
                     <span class="expiry-date ${expiryDateClass}">${formatDisplayDate(customer.endDate)}</span>
                      <button class="btn-icon renew-btn" data-id="${customer.id}">✏️</button>
                 </td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                <td>
+                <td data-label="Days Left"><span class="days-left-badge ${daysLeftClass}">${daysLeftText}</span></td>
+                <td data-label="Status"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td data-label="Payment">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <select class="payment-status-select" data-id="${customer.id}">
                             <option value="Paid" ${customer.status === 'Paid' ? 'selected' : ''}>Paid</option>
@@ -1431,10 +1668,28 @@
         const updateSummary = () => {
             let activeCount = 0; let expiredCount = 0;
             let unpaidCount = 0; let unpaidValue = 0;
+            let expiringSoonCount = 0;
+            let projectedMonthlyRevenue = 0;
             const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-            
+
             localCustomers.forEach(c => {
-                new Date(c.endDate) < todayStart ? expiredCount++ : activeCount++;
+                const endDate = new Date(c.endDate);
+                if (endDate < todayStart) {
+                    expiredCount++;
+                } else {
+                    activeCount++;
+                    // Days until expiry
+                    const daysLeft = Math.ceil((endDate - todayStart) / (1000 * 60 * 60 * 24));
+                    if (daysLeft <= 7) expiringSoonCount++;
+
+                    // Projected MRR: derive monthly value from the active subscription
+                    // amount/duration in months (capped to a reasonable monthly figure)
+                    const subDate = new Date(c.subDate);
+                    const totalDays = Math.max(1, Math.ceil((endDate - subDate) / (1000 * 60 * 60 * 24)));
+                    const monthsCovered = Math.max(1, totalDays / 30);
+                    const monthlyValue = (Number(c.amount) || 0) / monthsCovered;
+                    projectedMonthlyRevenue += monthlyValue;
+                }
             });
 
             allCustomers.forEach(c => {
@@ -1448,6 +1703,8 @@
             expiredUsersEl.textContent = expiredCount;
             unpaidCountEl.textContent = unpaidCount;
             unpaidValueEl.textContent = formatCurrency(unpaidValue);
+            if (projectedMonthlyEl) projectedMonthlyEl.textContent = formatCurrency(projectedMonthlyRevenue);
+            if (expiringSoonCountEl) expiringSoonCountEl.textContent = expiringSoonCount;
         };
 
         const updateInventorySummary = () => {
@@ -1459,65 +1716,125 @@
             inventoryTotalValueEl.textContent = formatCurrency(totalValue);
         };
         
-        const checkSystemAlerts = (customers) => {
+        // Build the alerts modal HTML for current state. Returns { html, hasAnyAlert, unpaidIds }
+        const buildAlertsContent = (customers) => {
             const today = new Date(); today.setHours(0, 0, 0, 0);
             const overdueCustomers = [];
             const expiringCustomers = [];
-            
+
             customers.forEach(customer => {
-                // Check Overdue Payments
+                // ALL unpaid customers are reported - alerts persist until marked Paid
                 if (customer.status === 'Unpaid') {
                     const subDate = new Date(customer.subDate);
                     const daysSinceSub = Math.floor((today - subDate) / (1000 * 3600 * 24));
-                    if (daysSinceSub >= 2 && !alertedPaymentCustomers.has(customer.id)) {
-                        overdueCustomers.push(customer);
-                    }
+                    overdueCustomers.push({ ...customer, daysSinceSub: Math.max(0, daysSinceSub) });
                 }
 
-                // Check Expiring Soon (3 days or less, but not already expired)
+                // Expiring Soon (3 days or less, but not already expired)
                 const endDate = new Date(customer.endDate);
                 const timeDiff = endDate.getTime() - today.getTime();
                 const daysUntilExpiry = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                
+
                 if (daysUntilExpiry >= 0 && daysUntilExpiry <= 3 && !alertedExpiryCustomers.has(customer.id)) {
                     expiringCustomers.push({ ...customer, daysUntilExpiry });
                 }
             });
 
-            if (overdueCustomers.length > 0 || expiringCustomers.length > 0) {
-                let modalContent = '';
+            // Sort overdue by most overdue first
+            overdueCustomers.sort((a, b) => b.daysSinceSub - a.daysSinceSub);
 
-                if (overdueCustomers.length > 0) {
+            let modalContent = '';
+            const unpaidIds = overdueCustomers.map(c => c.id);
+
+            if (overdueCustomers.length > 0) {
+                const totalUnpaidValue = overdueCustomers.reduce((s, c) => s + (Number(c.amount) || 0), 0);
+                modalContent += `
+                    <div class="alert-section">
+                        <h4>⚠️ Pending Payments (${overdueCustomers.length}) — ${formatCurrency(totalUnpaidValue)}</h4>
+                        <ul class="alert-list">`;
+                overdueCustomers.forEach(cust => {
+                    const daysText = cust.daysSinceSub > 0
+                        ? `<span style="color: var(--text-secondary); font-size: 0.85em;">${cust.daysSinceSub}d pending</span>`
+                        : '';
                     modalContent += `
-                        <div class="alert-section">
-                            <h4>⚠️ Overdue Payments</h4>
-                            <ul class="alert-list">`;
-                    overdueCustomers.forEach(cust => {
-                        modalContent += `
-                            <li>
-                                <span><b>${cust.name}</b></span>
-                                <button class="btn btn-save btn-sm btn-quick-pay" data-id="${cust.id}">Mark Paid</button>
-                            </li>`;
-                        alertedPaymentCustomers.add(cust.id);
-                    });
-                    modalContent += `</ul></div>`;
+                        <li>
+                            <span><b>${cust.name}</b> ${daysText} <span style="color: var(--text-secondary); font-size: 0.85em;">${formatCurrency(cust.amount || 0)}</span></span>
+                            <button class="btn btn-save btn-sm btn-quick-pay" data-id="${cust.id}">Mark Paid</button>
+                        </li>`;
+                });
+                modalContent += `</ul>`;
+                if (overdueCustomers.length > 1) {
+                    modalContent += `<button class="btn btn-mark-all-paid" id="btn-mark-all-paid">✓ Mark All ${overdueCustomers.length} as Paid</button>`;
                 }
+                modalContent += `</div>`;
+            }
 
-                if (expiringCustomers.length > 0) {
-                    modalContent += `
-                        <div class="alert-section">
-                            <h4>⏳ Expiring Soon (3 Days)</h4>
-                            <ul class="alert-list">`;
-                    expiringCustomers.forEach(cust => {
-                        const dayText = cust.daysUntilExpiry === 0 ? 'Today' : (cust.daysUntilExpiry === 1 ? 'Tomorrow' : `in ${cust.daysUntilExpiry} days`);
-                        modalContent += `<li>${cust.name} - Ends <b>${dayText}</b></li>`;
-                        alertedExpiryCustomers.add(cust.id);
-                    });
-                    modalContent += `</ul></div>`;
+            if (expiringCustomers.length > 0) {
+                modalContent += `
+                    <div class="alert-section">
+                        <h4>⏳ Expiring Soon (3 Days)</h4>
+                        <ul class="alert-list">`;
+                expiringCustomers.forEach(cust => {
+                    const dayText = cust.daysUntilExpiry === 0 ? 'Today' : (cust.daysUntilExpiry === 1 ? 'Tomorrow' : `in ${cust.daysUntilExpiry} days`);
+                    modalContent += `<li>${cust.name} - Ends <b>${dayText}</b></li>`;
+                    alertedExpiryCustomers.add(cust.id);
+                });
+                modalContent += `</ul></div>`;
+            }
+
+            if (overdueCustomers.length > 0) {
+                modalContent += `<div class="alert-modal-footer-note">💡 These reminders will keep showing until each customer is marked as paid.</div>`;
+            }
+
+            return {
+                html: modalContent,
+                hasAnyAlert: overdueCustomers.length > 0 || expiringCustomers.length > 0,
+                unpaidCount: overdueCustomers.length,
+                unpaidIds
+            };
+        };
+
+        // Update the bell icon based on current pending unpaid count
+        const updateAlertBell = (unpaidCount) => {
+            if (!alertBellBtn) return;
+            if (unpaidCount > 0) {
+                alertBellBtn.classList.add('active');
+                alertBellCount.textContent = unpaidCount > 99 ? '99+' : unpaidCount;
+            } else {
+                alertBellBtn.classList.remove('active');
+                alertBellCount.textContent = '0';
+            }
+        };
+
+        // Refresh modal content if it's currently open (so it reflects latest data)
+        const refreshAlertModalIfOpen = () => {
+            if (alertModal.classList.contains('show')) {
+                const { html, hasAnyAlert } = buildAlertsContent(localCustomers);
+                if (hasAnyAlert) {
+                    alertModalBody.innerHTML = html;
+                } else {
+                    // Nothing pending anymore - close modal automatically
+                    alertModal.classList.remove('show');
+                    showConfirmationToast("All caught up! No pending alerts. 🎉");
                 }
+            }
+        };
 
-                alertModalBody.innerHTML = modalContent;
+        const checkSystemAlerts = (customers) => {
+            const { html, hasAnyAlert, unpaidCount } = buildAlertsContent(customers);
+
+            // Always update the bell first
+            updateAlertBell(unpaidCount);
+
+            // Show the modal automatically on first load if there's anything pending,
+            // and re-show it whenever new pending items appear.
+            if (hasAnyAlert && !initialAlertShown) {
+                alertModalBody.innerHTML = html;
                 alertModal.classList.add('show');
+                initialAlertShown = true;
+            } else {
+                // If modal is already open, refresh its contents
+                refreshAlertModalIfOpen();
             }
         };
 
@@ -1729,14 +2046,27 @@
                     sortColumn = column;
                     
                     // CUSTOM FIX: If clicking Payment Status, show 'Unpaid' (Desc) first
-                    // Alphabetically "U" (Unpaid) > "P" (Paid), so Descending puts Unpaid first
                     if (column === 'status') {
                         sortDirection = 'desc';
+                    } else if (column === 'daysLeft') {
+                        // Days Left: ascending shows expiring-soonest first - what users want
+                        sortDirection = 'asc';
                     } else {
                         sortDirection = 'asc';
                     }
                 }
                 displayCustomers();
+            });
+
+            // --- Alert Bell Click: Reopen alerts modal anytime ---
+            alertBellBtn.addEventListener('click', () => {
+                const { html, hasAnyAlert } = buildAlertsContent(localCustomers);
+                if (hasAnyAlert) {
+                    alertModalBody.innerHTML = html;
+                    alertModal.classList.add('show');
+                } else {
+                    showConfirmationToast("No pending alerts. All caught up! 🎉");
+                }
             });
             
             customerTableBody.addEventListener('click', e => {
@@ -1785,14 +2115,44 @@
                 }
             });
             
-            // New Event Listener for Quick Pay in Modal
+            // Event Listener for Quick Pay + Mark All Paid in Alerts Modal
             alertModalBody.addEventListener('click', async (e) => {
                 if (e.target.classList.contains('btn-quick-pay')) {
                     const docId = e.target.dataset.id;
+                    const customerSnapshot = allCustomers.find(c => c.id === docId);
                     await updateDoc(doc(db, `users/${userId}/customers`, docId), { status: 'Paid' });
                     setUndoAction(() => { updateDoc(doc(db, `users/${userId}/customers`, docId), { status: 'Unpaid' }); });
-                    e.target.closest('li').remove(); // Remove line from modal immediately
-                    showConfirmationToast("Payment marked as paid!");
+                    e.target.closest('li').remove();
+                    showConfirmationToast(`${customerSnapshot ? customerSnapshot.name : 'Customer'} marked as paid!`);
+                } else if (e.target.id === 'btn-mark-all-paid') {
+                    // Mark All Paid - bulk action with single undo
+                    const { unpaidIds } = buildAlertsContent(localCustomers);
+                    if (unpaidIds.length === 0) return;
+
+                    confirmModalTitle.textContent = `Mark All ${unpaidIds.length} as Paid?`;
+                    confirmModalMessage.textContent = `This will mark ${unpaidIds.length} pending customers as Paid. You can undo this action.`;
+                    confirmModalYes.textContent = "Yes, Mark All Paid";
+
+                    confirmCallback = async () => {
+                        const batch = writeBatch(db);
+                        const snapshotIds = [...unpaidIds];
+                        unpaidIds.forEach(id => {
+                            batch.update(doc(db, `users/${userId}/customers`, id), { status: 'Paid' });
+                        });
+                        await batch.commit();
+                        setUndoAction(() => {
+                            const undoBatch = writeBatch(db);
+                            snapshotIds.forEach(id => {
+                                undoBatch.update(doc(db, `users/${userId}/customers`, id), { status: 'Unpaid' });
+                            });
+                            undoBatch.commit();
+                        }, `Reverted ${snapshotIds.length} payments back to Unpaid.`);
+                        showConfirmationToast(`Marked ${snapshotIds.length} customers as Paid! 🎉`);
+                        // Reset confirm button text
+                        confirmModalYes.textContent = "Yes, Delete";
+                    };
+
+                    confirmModal.classList.add('show');
                 }
             });
             
@@ -1922,6 +2282,20 @@
 
             const initialTab = window.location.hash.substring(1) || 'dashboard';
             setActiveTab(initialTab);
+
+            // --- Recurring Pending-Payment Reminder ---
+            // Every 30 minutes, if there are still pending unpaid customers
+            // and the alerts modal is not currently open, re-pop it as a gentle nudge.
+            // This ensures Inzi never forgets pending payments.
+            if (pendingReminderInterval) clearInterval(pendingReminderInterval);
+            pendingReminderInterval = setInterval(() => {
+                const { html, hasAnyAlert, unpaidCount } = buildAlertsContent(localCustomers);
+                updateAlertBell(unpaidCount);
+                if (hasAnyAlert && !alertModal.classList.contains('show') && unpaidCount > 0) {
+                    alertModalBody.innerHTML = html;
+                    alertModal.classList.add('show');
+                }
+            }, 30 * 60 * 1000); // 30 minutes
         }
 
         // Start the application immediately
